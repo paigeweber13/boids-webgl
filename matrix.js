@@ -81,6 +81,71 @@ function rotate(theta, axis) {
   }
 }
 
+/*
+ * for the equation Q = MP, this function returns matrix M.
+ *
+ * This M is designed to take a P written with world coordinates and convert it
+ * to Q written in NDC
+ *
+ * wc is the world coordinate system, which must have the following structure:
+ *
+ * let wc = {
+ *   x_min: Number,
+ *   x_max: Number,
+ *   y_min: Number,
+ *   y_max: Number,
+ *   z_min: Number,
+ *   z_max: Number,
+ * }
+ */
+function worldToNormalized(wc) {
+  /* how does this work?
+   *
+   * imagine a cube that is the world coordinate system. Its scale is
+   * arbitrary. We want it to match up with the NDC window
+   */
+
+  /* To do this, we need to do 3 transformations:
+   *  - Transform bottom left corner of world coordinate system to 0,0,0 in NDC
+   *  - Scale world coordinate system to be 2x2x2 units
+   *  - move corer of world coordinate system to -1, -1, -1 in NDC
+   */
+
+  /* translate the bottom left corner of the world coordinate system to 0,0 in
+   * NDC
+   */
+  let translate_world_to_ndc_center = translate(
+    -wc.x_min, -wc.y_min, -wc.z_min);
+
+  /* scale the world coordinate system to size 2 x 2. Why this works:
+   *
+   *  - size of world coordinate system is (x_max - x_min, y_max - y_min)
+   *  - size of NDC system is (2, 2)
+   *
+   *  Therefore:
+   *
+   *  NDC_size_x = world_size_x * NDC_size_x / world_size_x
+   *  NDC_size_x = world_size_x * 2.0 / (x_max - x_min)
+   *
+   *  so we apply scale to world_size. Therefore we want to scale (multiply) by
+   *  NDC_size_x / world_size_x, which is 2.0 / (x_max - x_min). Likewise for
+   *  the y dimension
+   */
+  let scale_world_to_ndc_size = scale(
+    2.0/(wc.x_max - wc.x_min),
+    2.0/(wc.y_max - wc.y_min),
+    2.0/(wc.z_max - wc.z_min));
+
+  /* translate the bottom left corner of the world coordinate system to -1, -1
+   * in NDC
+   */
+  let translate_world_to_ndc_corner = translate(-1.0, -1.0, -1.0);
+
+  return mult(translate_world_to_ndc_corner,
+    mult(scale_world_to_ndc_size, translate_world_to_ndc_center)
+  );
+}
+
 function lookAt(eye, at, up) {
   if (eye.length != 3 || at.length != 3 || up.length != 3) {
     console.error("all three parameters of 'lookAt' must be vectors (lists) " +

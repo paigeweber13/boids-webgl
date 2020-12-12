@@ -28,7 +28,8 @@ lang="en">
   attribute vec4 vPosition;
   attribute vec4 vColor;
 
-  uniform mat4  M_model;
+  uniform mat4  M_model_transform;
+  uniform mat4  M_world_to_ndc;
   uniform mat4  M_projection;
   uniform mat4  M_camera;
 
@@ -37,7 +38,8 @@ lang="en">
   varying vec4 fColor;
 
   void main() {
-    gl_Position = M_projection * M_camera * M_model * vPosition;
+    gl_Position = M_world_to_ndc * M_projection * M_camera *
+    M_model_transform * vPosition;
 
     fColor = vColor;
   }

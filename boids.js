@@ -4,7 +4,8 @@ let canvas;
 let gl;
 
 // matrices
-let M_model;
+let M_model_transform;
+let M_world_to_ndc;
 let M_projection;
 let M_camera;
 
@@ -19,6 +20,16 @@ let vertexColors = [];
 
 let theta = 0;
 const THETA_STEP = Math.PI / 512;
+
+// coordinate system
+const WORLD_COORDINATES = {
+  x_min: -2,
+  x_max:  2,
+  y_min: -2,
+  y_max:  2,
+  z_min: -2,
+  z_max:  2,
+}
 
 /* ------------- init ------------- */
 window.onload = function init() {
@@ -52,9 +63,10 @@ window.onload = function init() {
   gl.viewport(0, 0, canvas.width, canvas.height);
 
   // Get a handle to transform matrices
-  M_model = gl.getUniformLocation(program, "M_model");
+  M_model_transform = gl.getUniformLocation(program, "M_model_transform");
   M_projection = gl.getUniformLocation(program, "M_projection");
   M_camera = gl.getUniformLocation(program, "M_camera")
+  M_world_to_ndc = gl.getUniformLocation(program, "M_world_to_ndc");
 
   // create a vertex buffer - this will hold all vertices
   vBuffer = gl.createBuffer();
@@ -67,6 +79,7 @@ window.onload = function init() {
   cBuffer = gl.createBuffer();
 
   setVertices();
+  setWorldCoordinates();
 
   resetSliders();
   setListeners();
@@ -102,6 +115,11 @@ function setCamera() {
   let upVector = vec3(0, 0, 1);
   let cameraLeftSide = lookAt(eyeVector, lookAtVector, upVector);
   gl.uniformMatrix4fv(M_camera, false, flatten(cameraLeftSide));
+}
+
+function setWorldCoordinates() {
+  gl.uniformMatrix4fv(M_world_to_ndc, false,
+    flatten(worldToNormalized(WORLD_COORDINATES)));
 }
 
 function drawObjects() {
@@ -225,7 +243,7 @@ function drawCube(transform, color) {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferCube);
 
   // copy transform matrix to GPU
-  gl.uniformMatrix4fv(M_model, false, flatten(transform));
+  gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
   // variables we need later
   const STEP = 1152;
@@ -262,7 +280,7 @@ function drawTetrahedron(transform) {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferTetrahedron);
 
   // copy transform matrix to GPU
-  gl.uniformMatrix4fv(M_model, false, flatten(transform));
+  gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
   // set offset to select color
   gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
