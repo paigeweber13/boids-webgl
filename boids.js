@@ -11,7 +11,7 @@ let M_camera;
 
 // buffers
 let vBuffer, cBuffer;
-let iBufferCube, iBufferTetrahedron;
+let iBufferCube, iBufferWireframeCube, iBufferTetrahedron;
 
 // other webGL things
 let vColor;
@@ -82,6 +82,7 @@ window.onload = function init() {
 
   // index buffer
   iBufferCube = gl.createBuffer();
+  iBufferWireframeCube = gl.createBuffer();
   iBufferTetrahedron = gl.createBuffer();
 
   // color buffer
@@ -152,7 +153,7 @@ function drawObjects() {
     // cube width is 2, so we want to scale by (world_size/2)
     scale(WORLD_WIDTH/2, WORLD_DEPTH/2, WORLD_HEIGHT/2)
   );
-  drawCube(transform, "Pale Spring Bud");
+  drawWireframeCube(transform);
 
   /* cube 1 - main cube */
   transform = mult(translate(0.0, 0.0, 0.0), scale(0.5, 0.5, 0.5));
@@ -216,6 +217,26 @@ function setVertices() {
     20, 21, 22, 20, 22, 23     // back
   ]);
 
+  const INDICES_WIREFRAME_CUBE = new Uint8Array([
+    // front face
+    0, 1, 
+    1, 2, 
+    2, 3, 
+    3, 0,
+
+    // back face
+    20, 21, 
+    21, 22, 
+    22, 23,
+    23, 20,
+
+    // 4 lines connecting faces
+    0, 23,
+    1, 22,
+    2, 21,
+    3, 20,
+  ]);
+
   const INDICES_TETRAHEDRON = new Uint8Array([
     24, 25, 26, // rear face (base)
     24, 26, 27, // left side face
@@ -234,6 +255,9 @@ function setVertices() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferCube);
   // this call to bufferData is how webGL knows that this is the index buffer
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, INDICES_CUBE, gl.STATIC_DRAW);
+
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferWireframeCube);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, INDICES_WIREFRAME_CUBE, gl.STATIC_DRAW);
 
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferTetrahedron);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, INDICES_TETRAHEDRON, gl.STATIC_DRAW);
@@ -301,8 +325,22 @@ function drawCube(transform, color) {
   gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, color_offset);
 
   // draw cube
-  gl.drawElements(gl.LINE_STRIP, 36, gl.UNSIGNED_BYTE, 0);
-  // gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
+  // gl.drawElements(gl.LINE_STRIP, 36, gl.UNSIGNED_BYTE, 0);
+  gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
+}
+
+function drawWireframeCube(transform, color) {
+  // bind cube buffer
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferWireframeCube);
+
+  // copy transform matrix to GPU
+  gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
+
+  // set offset to select color
+  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 1152);
+
+  // draw cube
+  gl.drawElements(gl.LINES, 24, gl.UNSIGNED_BYTE, 0);
 }
 
 function drawTetrahedron(transform) {
