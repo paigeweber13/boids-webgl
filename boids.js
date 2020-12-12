@@ -23,13 +23,22 @@ const THETA_STEP = Math.PI / 512;
 
 // coordinate system
 const WORLD_COORDINATES = {
-  x_min: -2,
-  x_max:  2,
-  y_min: -2,
-  y_max:  2,
-  z_min: -2,
-  z_max:  2,
+  x_min: -5,
+  x_max:  5,
+  y_min: -5,
+  y_max:  5,
+  z_min: -5,
+  z_max:  5,
 }
+
+/* world boundaries */
+const WORLD_WIDTH = WORLD_COORDINATES.x_max - WORLD_COORDINATES.x_min;
+const WORLD_DEPTH = WORLD_COORDINATES.y_max - WORLD_COORDINATES.y_min;
+const WORLD_HEIGHT = WORLD_COORDINATES.z_max - WORLD_COORDINATES.z_min;
+
+const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
+const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
+const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
 /* ------------- init ------------- */
 window.onload = function init() {
@@ -107,14 +116,24 @@ function render() {
 
 // actually sets camera and projection
 function setCamera() {
-  let projectionDynamic = perspectiveProjection(1, 1, 1, 5);
-  gl.uniformMatrix4fv(M_projection, false, flatten(projectionDynamic));
+  let fov = Math.PI/24;
+  let projection = perspectiveProjectionFov(fov, fov, 1, 1000)
+  gl.uniformMatrix4fv(M_projection, false, flatten(projection));
 
-  let eyeVector = vec3(1.0, -2.5, 1.5)
-  let lookAtVector = vec3(0, 0, 0);
+  let eyeVector = vec3(
+    WORLD_COORDINATES.x_max + WORLD_WIDTH * 0.2,
+    WORLD_COORDINATES.y_min + WORLD_DEPTH * -1.5,
+    WORLD_COORDINATES.z_max + WORLD_HEIGHT * 0.2,
+  );
+  let lookAtVector = vec3(
+    WORLD_CENTER_X,
+    WORLD_CENTER_Y + WORLD_DEPTH * -0.3,
+    WORLD_CENTER_Z
+  );
   let upVector = vec3(0, 0, 1);
-  let cameraLeftSide = lookAt(eyeVector, lookAtVector, upVector);
-  gl.uniformMatrix4fv(M_camera, false, flatten(cameraLeftSide));
+
+  let camera = lookAt(eyeVector, lookAtVector, upVector);
+  gl.uniformMatrix4fv(M_camera, false, flatten(camera));
 }
 
 function setWorldCoordinates() {
@@ -125,15 +144,25 @@ function setWorldCoordinates() {
 function drawObjects() {
   let transform;
 
+  transform = mult(
+    // move to center of world: cube vertices are such that center of cube
+    // is the origin of the cube
+    translate(WORLD_CENTER_X, WORLD_CENTER_Y, WORLD_CENTER_Z),
+
+    // cube width is 2, so we want to scale by (world_size/2)
+    scale(WORLD_WIDTH/2, WORLD_DEPTH/2, WORLD_HEIGHT/2)
+  );
+  drawCube(transform, "Pale Spring Bud");
+
   /* cube 1 - main cube */
   transform = mult(translate(0.0, 0.0, 0.0), scale(0.5, 0.5, 0.5));
   transform = mult(rotate(theta, 'z'), transform);
-  drawCube(transform, "Pale Spring Bud");
+  drawTetrahedron(transform);
 
   /* cube 2 - smaller, on top */
   transform = mult(translate(0.0, 0.0, 0.5), scale(0.3, 0.3, 0.3));
   transform = mult(rotate(theta, 'z'), transform);
-  drawCube(transform, "Peach Puff");
+  drawTetrahedron(transform);
 
   /* tetrahedron - to the right */
   transform = mult(translate(1.0, 0.0, 0.0), scale(0.3, 0.3, 0.3));
@@ -272,7 +301,8 @@ function drawCube(transform, color) {
   gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, color_offset);
 
   // draw cube
-  gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
+  gl.drawElements(gl.LINE_STRIP, 36, gl.UNSIGNED_BYTE, 0);
+  // gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
 }
 
 function drawTetrahedron(transform) {

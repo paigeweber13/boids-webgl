@@ -221,14 +221,9 @@ function perspectiveProjectionFlat(width, height, near, far) {
 // converting from FOV to width/height/near/far and vice versa is described in the openGL faq:
 // https://www.opengl.org/archives/resources/faq/technical/transformations.htm
 function perspectiveProjectionFov(fovX, fovY, near, far) {
-  // w and h should really be a function of "near", but the example shows the projection width and height
-  // as static with respect to near
-
   let h = 2 * Math.tan(fovY * 0.5) * near;
   let w = 2 * Math.tan(fovX * 0.5) * near;
 
-  // let h = 2 * Math.tan(fovY*0.5);
-  // let w = 2 * Math.tan(fovX*0.5);
   return perspectiveProjection(w, h, near, far);
 }
 
