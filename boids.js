@@ -40,6 +40,9 @@ const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
 const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
 const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
+// boid things
+boids = [];
+
 /* ------------- init ------------- */
 window.onload = function init() {
   // --- INIT OPENGL --- //
@@ -94,6 +97,8 @@ window.onload = function init() {
   resetSliders();
   setListeners();
 
+  createBoids();
+
   setCamera();
   render();
 };
@@ -108,9 +113,49 @@ function render() {
   gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
 
   doRotation();
+  updateBoids();
   drawObjects();
 
   requestAnimFrame(render);
+}
+
+/* ------------ boid things ------------- */
+function updateBoids() {
+  for (boid of boids){
+    boid.velocity.x += boid.acceleration.x;
+    boid.velocity.y += boid.acceleration.y;
+    boid.velocity.z += boid.acceleration.z;
+
+    boid.position.x += boid.velocity.x;
+    boid.position.y += boid.velocity.y;
+    boid.position.z += boid.velocity.z;
+  }
+}
+
+function createBoids() {
+  const NUM_BOIDS = 100;
+
+  for(let i = 0; i < NUM_BOIDS; i++){
+    let this_position = {
+      x: WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
+      y: WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
+      z: WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
+    };
+    let this_velocity = {
+      x: 0,
+      y: 0,
+      z: 0,
+      // x: Math.random() * WORLD_WIDTH  / 64,
+      // y: Math.random() * WORLD_DEPTH  / 64,
+      // z: Math.random() * WORLD_HEIGHT / 64,
+    };
+    let this_acceleration = {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
+    boids.push(new Boid(this_position, this_velocity, this_acceleration));
+  }
 }
 
 /* ------------ drawing ------------- */
@@ -145,6 +190,7 @@ function setWorldCoordinates() {
 function drawObjects() {
   let transform;
 
+  /* ----- draw world boundaries ----- */
   transform = mult(
     // move to center of world: cube vertices are such that center of cube
     // is the origin of the cube
@@ -155,24 +201,33 @@ function drawObjects() {
   );
   drawWireframeCube(transform);
 
-  /* cube 1 - main cube */
-  transform = mult(translate(0.0, 0.0, 0.0), scale(0.5, 0.5, 0.5));
-  transform = mult(rotate(theta, 'z'), transform);
-  drawTetrahedron(transform);
+  /* ----- draw boids ----- */
+  const scale_transform = scale(0.5, 0.5, 0.5);
+  for (boid of boids) {
+    transform = mult(translate(boid.position.x, boid.position.y, boid.position.z), 
+      scale_transform);
+    transform = mult(rotate(theta, 'z'), transform);
+    drawTetrahedron(transform);
+  }
 
-  /* cube 2 - smaller, on top */
-  transform = mult(translate(0.0, 0.0, 0.5), scale(0.3, 0.3, 0.3));
-  transform = mult(rotate(theta, 'z'), transform);
-  drawTetrahedron(transform);
+  // /* cube 1 - main cube */
+  // transform = mult(translate(0.0, 0.0, 0.0), scale(0.5, 0.5, 0.5));
+  // transform = mult(rotate(theta, 'z'), transform);
+  // drawTetrahedron(transform);
 
-  /* tetrahedron - to the right */
-  transform = mult(translate(1.0, 0.0, 0.0), scale(0.3, 0.3, 0.3));
-  transform = mult(rotate(theta, 'z'), transform);
-  drawTetrahedron(transform);
+  // /* cube 2 - smaller, on top */
+  // transform = mult(translate(0.0, 0.0, 0.5), scale(0.3, 0.3, 0.3));
+  // transform = mult(rotate(theta, 'z'), transform);
+  // drawTetrahedron(transform);
+
+  // /* tetrahedron - to the right */
+  // transform = mult(translate(1.0, 0.0, 0.0), scale(0.3, 0.3, 0.3));
+  // transform = mult(rotate(theta, 'z'), transform);
+  // drawTetrahedron(transform);
 }
 
 function doRotation() {
-  theta += THETA_STEP;
+  // theta += THETA_STEP;
   if (theta >= 2 * Math.PI) {
     theta = 0;
   }
