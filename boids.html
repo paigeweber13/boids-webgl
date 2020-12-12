@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <title>Boids</title>
+</head>
+<html
+lang="en">
+
+<body>
+<div class="container">
+  <h1>Lighting</h1>
+
+  <div class="row">
+    <canvas height="512" id="gl-canvas" width="512">
+      Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+  </div>
+  <br>
+  <div class="row">
+    <button class="btn btn-secondary" id="reset">Reset Simulation</button>
+  </div>
+</div>
+
+</body>
+
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+  attribute vec4 vPosition;
+  attribute vec4 vColor;
+
+  uniform mat4  M_model;
+  uniform mat4  M_projection;
+  uniform mat4  M_camera;
+
+  // varying type variable to share with fragment shader, as the color
+  // will be sent to the fragment shader
+  varying vec4 fColor;
+
+  void main() {
+    gl_Position = M_projection * M_camera * M_model * vPosition;
+
+    fColor = vColor;
+  }
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+  precision mediump float;
+
+  // vertex color coming from vertex shader
+  varying vec4 fColor;
+
+  void main() {
+    gl_FragColor = fColor;
+  }
+
+</script>
+
+<script src="utils/webgl-utils.js" type="text/javascript"></script>
+<script src="utils/initShaders.js" type="text/javascript"></script>
+<script src="utils/MV.js" type="text/javascript"></script>
+<script src="matrix.js" type="text/javascript"></script>
+<script src="boids.js" type="text/javascript"></script>
+
+<link crossorigin="anonymous"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+      rel="stylesheet">
+
+</html>
