@@ -129,11 +129,34 @@ function updateBoids() {
     boid.position.x += boid.velocity.x;
     boid.position.y += boid.velocity.y;
     boid.position.z += boid.velocity.z;
+
+    // if they fly past the boundary, wrap around to other side
+    if(boid.position.x > WORLD_COORDINATES.x_max) { 
+      boid.position.x = WORLD_COORDINATES.x_min 
+    }
+    else if(boid.position.x < WORLD_COORDINATES.x_min) { 
+      boid.position.x = WORLD_COORDINATES.x_max 
+    }
+
+    if(boid.position.y > WORLD_COORDINATES.y_max) { 
+      boid.position.y = WORLD_COORDINATES.y_min 
+    }
+    else if(boid.position.y < WORLD_COORDINATES.y_min) { 
+      boid.position.y = WORLD_COORDINATES.y_max
+    }
+
+    if(boid.position.z > WORLD_COORDINATES.z_max) { 
+      boid.position.z = WORLD_COORDINATES.z_min 
+    }
+    else if(boid.position.z < WORLD_COORDINATES.z_min) { 
+      boid.position.z = WORLD_COORDINATES.z_max
+    }
   }
 }
 
 function createBoids() {
   const NUM_BOIDS = 100;
+  const SPEED_FACTOR = 1/128;
 
   for(let i = 0; i < NUM_BOIDS; i++){
     let this_position = {
@@ -145,9 +168,9 @@ function createBoids() {
       x: 0,
       y: 0,
       z: 0,
-      // x: Math.random() * WORLD_WIDTH  / 64,
-      // y: Math.random() * WORLD_DEPTH  / 64,
-      // z: Math.random() * WORLD_HEIGHT / 64,
+      x: Math.random() * WORLD_WIDTH  * SPEED_FACTOR,
+      y: Math.random() * WORLD_DEPTH  * SPEED_FACTOR,
+      z: Math.random() * WORLD_HEIGHT * SPEED_FACTOR,
     };
     let this_acceleration = {
       x: 0,
@@ -202,7 +225,7 @@ function drawObjects() {
   drawWireframeCube(transform);
 
   /* ----- draw boids ----- */
-  const scale_transform = scale(0.5, 0.5, 0.5);
+  const scale_transform = scale(0.2, 0.2, 0.2);
   for (boid of boids) {
     transform = mult(translate(boid.position.x, boid.position.y, boid.position.z), 
       scale_transform);
