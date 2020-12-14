@@ -130,34 +130,28 @@ function render() {
 /* ------------ boid things ------------- */
 function updateBoids() {
   for (boid of boids){
-    boid.velocity.x += boid.acceleration.x;
-    boid.velocity.y += boid.acceleration.y;
-    boid.velocity.z += boid.acceleration.z;
-
-    boid.position.x += boid.velocity.x;
-    boid.position.y += boid.velocity.y;
-    boid.position.z += boid.velocity.z;
+    boid.doTimeStep();
 
     // if they fly past the boundary, wrap around to other side
-    if(boid.position.x > WORLD_COORDINATES.x_max) { 
-      boid.position.x = WORLD_COORDINATES.x_min 
+    if(boid.position[0] > WORLD_COORDINATES.x_max) { 
+      boid.position[0] = WORLD_COORDINATES.x_min 
     }
-    else if(boid.position.x < WORLD_COORDINATES.x_min) { 
-      boid.position.x = WORLD_COORDINATES.x_max 
-    }
-
-    if(boid.position.y > WORLD_COORDINATES.y_max) { 
-      boid.position.y = WORLD_COORDINATES.y_min 
-    }
-    else if(boid.position.y < WORLD_COORDINATES.y_min) { 
-      boid.position.y = WORLD_COORDINATES.y_max
+    else if(boid.position[0] < WORLD_COORDINATES.x_min) { 
+      boid.position[0] = WORLD_COORDINATES.x_max 
     }
 
-    if(boid.position.z > WORLD_COORDINATES.z_max) { 
-      boid.position.z = WORLD_COORDINATES.z_min 
+    if(boid.position[1] > WORLD_COORDINATES.y_max) { 
+      boid.position[1] = WORLD_COORDINATES.y_min 
     }
-    else if(boid.position.z < WORLD_COORDINATES.z_min) { 
-      boid.position.z = WORLD_COORDINATES.z_max
+    else if(boid.position[1] < WORLD_COORDINATES.y_min) { 
+      boid.position[1] = WORLD_COORDINATES.y_max
+    }
+
+    if(boid.position[2] > WORLD_COORDINATES.z_max) { 
+      boid.position[2] = WORLD_COORDINATES.z_min 
+    }
+    else if(boid.position[2] < WORLD_COORDINATES.z_min) { 
+      boid.position[2] = WORLD_COORDINATES.z_max
     }
   }
 }
@@ -167,21 +161,21 @@ function createBoids() {
   const SPEED_FACTOR = 1/128;
 
   for(let i = 0; i < NUM_BOIDS; i++){
-    let this_position = {
-      x: WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
-      y: WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
-      z: WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
-    };
-    let this_velocity = {
-      x: Math.random() * WORLD_WIDTH  * SPEED_FACTOR,
-      y: Math.random() * WORLD_DEPTH  * SPEED_FACTOR,
-      z: Math.random() * WORLD_HEIGHT * SPEED_FACTOR,
-    };
-    let this_acceleration = {
-      x: 0,
-      y: 0,
-      z: 0,
-    };
+    let this_position = [
+      WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
+      WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
+      WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
+    ];
+    let this_velocity = [
+      Math.random() * WORLD_WIDTH  * SPEED_FACTOR,
+      Math.random() * WORLD_DEPTH  * SPEED_FACTOR,
+      Math.random() * WORLD_HEIGHT * SPEED_FACTOR,
+    ];
+    let this_acceleration = [
+      0,
+      0,
+      0,
+    ];
     boids.push(new Boid(this_position, this_velocity, this_acceleration));
   }
 }
@@ -238,9 +232,8 @@ function drawObjects() {
   );
 
   for (boid of boids) {
-    transform = mult(translate(boid.position.x, boid.position.y, boid.position.z), 
+    transform = mult(translate(boid.position[0], boid.position[1], boid.position[2]), 
       scale_transform);
-    transform = mult(rotate(theta, 'z'), transform);
     drawTetrahedron(transform);
   }
 }
