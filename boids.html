@@ -19,7 +19,7 @@ lang="en">
     <div class="col-md-1">
       <button class="btn btn-secondary" id="reset">Reset Simulation</button>
       <br><br>
-      <button class="btn btn-secondary" id="reset">Toggle World Rotation</button>
+      <button class="btn btn-secondary" id="toggle-rotation">Toggle World Rotation</button>
     </div>
   </div>
 </div>
@@ -35,7 +35,7 @@ lang="en">
   uniform mat4  M_world_to_ndc;
   uniform mat4  M_projection;
   uniform mat4  M_camera;
-  // uniform mat4  M_world_rotation;
+  uniform mat4  M_world_rotation;
 
   // varying type variable to share with fragment shader, as the color
   // will be sent to the fragment shader
@@ -43,7 +43,7 @@ lang="en">
 
   void main() {
     gl_Position = M_world_to_ndc * M_projection * M_camera *
-      M_model_transform * vPosition;
+      M_world_rotation * M_model_transform * vPosition;
 
     fColor = vColor;
   }

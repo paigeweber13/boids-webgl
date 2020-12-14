@@ -8,6 +8,7 @@ let M_model_transform;
 let M_world_to_ndc;
 let M_projection;
 let M_camera;
+let M_world_rotation;
 
 // buffers
 let vBuffer, cBuffer;
@@ -41,7 +42,8 @@ const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
 const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
 // boid things
-boids = [];
+let boids = [];
+let isWorldRotating = false;
 
 /* ------------- init ------------- */
 window.onload = function init() {
@@ -79,6 +81,10 @@ window.onload = function init() {
   M_projection = gl.getUniformLocation(program, "M_projection");
   M_camera = gl.getUniformLocation(program, "M_camera")
   M_world_to_ndc = gl.getUniformLocation(program, "M_world_to_ndc");
+  M_world_rotation = gl.getUniformLocation(program, "M_world_rotation");
+
+  // world rotation might be disabled... set to identity just in case
+  gl.uniformMatrix4fv(M_world_rotation, false, flatten(identity()));
 
   // create a vertex buffer - this will hold all vertices
   vBuffer = gl.createBuffer();
@@ -94,7 +100,6 @@ window.onload = function init() {
   setVertices();
   setWorldCoordinates();
 
-  resetSliders();
   setListeners();
 
   createBoids();
@@ -112,7 +117,7 @@ function render() {
   // bind cBuffer as array buffer
   gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
 
-  doRotation();
+  doWorldRotation();
   updateBoids();
   drawObjects();
 
@@ -165,9 +170,6 @@ function createBoids() {
       z: WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
     };
     let this_velocity = {
-      x: 0,
-      y: 0,
-      z: 0,
       x: Math.random() * WORLD_WIDTH  * SPEED_FACTOR,
       y: Math.random() * WORLD_DEPTH  * SPEED_FACTOR,
       z: Math.random() * WORLD_HEIGHT * SPEED_FACTOR,
@@ -225,34 +227,29 @@ function drawObjects() {
   drawWireframeCube(transform);
 
   /* ----- draw boids ----- */
-  const scale_transform = scale(0.2, 0.2, 0.2);
+  const SCALE_FACTOR = 1/64;
+  const scale_transform = scale(
+    WORLD_WIDTH * SCALE_FACTOR, 
+    WORLD_DEPTH * SCALE_FACTOR, 
+    WORLD_HEIGHT * SCALE_FACTOR
+  );
+
   for (boid of boids) {
     transform = mult(translate(boid.position.x, boid.position.y, boid.position.z), 
       scale_transform);
     transform = mult(rotate(theta, 'z'), transform);
     drawTetrahedron(transform);
   }
-
-  // /* cube 1 - main cube */
-  // transform = mult(translate(0.0, 0.0, 0.0), scale(0.5, 0.5, 0.5));
-  // transform = mult(rotate(theta, 'z'), transform);
-  // drawTetrahedron(transform);
-
-  // /* cube 2 - smaller, on top */
-  // transform = mult(translate(0.0, 0.0, 0.5), scale(0.3, 0.3, 0.3));
-  // transform = mult(rotate(theta, 'z'), transform);
-  // drawTetrahedron(transform);
-
-  // /* tetrahedron - to the right */
-  // transform = mult(translate(1.0, 0.0, 0.0), scale(0.3, 0.3, 0.3));
-  // transform = mult(rotate(theta, 'z'), transform);
-  // drawTetrahedron(transform);
 }
 
-function doRotation() {
-  // theta += THETA_STEP;
-  if (theta >= 2 * Math.PI) {
-    theta = 0;
+function doWorldRotation() {
+  if(isWorldRotating){
+    theta += THETA_STEP;
+    if (theta >= 2 * Math.PI) {
+      theta = 0;
+    }
+
+    gl.uniformMatrix4fv(M_world_rotation, false, flatten(rotate(theta, 'z')));
   }
 }
 
@@ -503,15 +500,13 @@ let colors = {
 
 /* UI */
 function setListeners() {
-
-  document.getElementById("reset").onclick = resetSliders;
+  document.getElementById("reset").onclick = resetSimulation;
+  document.getElementById("toggle-rotation").onclick = () => {
+    isWorldRotating = !isWorldRotating;
+  };
 }
 
-function resetSliders() {
-  // set defaults
-
-  setSlidersToVariable();
-}
-
-function setSlidersToVariable() {
+function resetSimulation() {
+  boids = [];
+  createBoids();
 }
