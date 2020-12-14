@@ -44,6 +44,7 @@ const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 // boid things
 let boids = [];
 let isWorldRotating = false;
+let isPaused = false;
 
 /* ------------- init ------------- */
 window.onload = function init() {
@@ -121,7 +122,9 @@ function render() {
   updateBoids();
   drawObjects();
 
-  requestAnimFrame(render);
+  if(!isPaused){
+    requestAnimFrame(render);
+  }
 }
 
 /* ------------ boid things ------------- */
@@ -501,8 +504,17 @@ let colors = {
 /* UI */
 function setListeners() {
   document.getElementById("reset").onclick = resetSimulation;
+
   document.getElementById("toggle-rotation").onclick = () => {
     isWorldRotating = !isWorldRotating;
+  };
+
+  document.getElementById("play-pause").onclick = () => {
+    isPaused = !isPaused;
+
+    if(!isPaused){
+      render();
+    }
   };
 }
 
