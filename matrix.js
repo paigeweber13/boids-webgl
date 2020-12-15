@@ -1,3 +1,21 @@
+/* basic linear algebra */
+// u, v must be 3-element arrays
+function distance(u, v) {
+  return Math.pow(
+    Math.pow(v[0]-u[0], 2) + Math.pow(v[1]-u[1], 2) + Math.pow(v[2]-u[2], 2), 
+    0.5
+  );
+}
+
+function scalarMultiply(u, c){
+  let result = [];
+  for (let item of u) {
+    result.push(item * c);
+  }
+  return result;
+}
+
+/* basic transforms */
 function identity() {
   return mat4(
     vec4(1., 0., 0., 0.),

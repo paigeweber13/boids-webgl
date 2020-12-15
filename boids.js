@@ -41,8 +41,18 @@ const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
 const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
 const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
-// boid things
+
+/* boid things */
 let boids = [];
+const NUM_BOIDS = 100;
+
+// just the average of the 3 dimensions
+const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
+// const BOID_SIGHT_DISTANCE = WORLD_SIZE/25;
+const BOID_SIZE = WORLD_SIZE/64;
+const BOID_MAX_SPEED = WORLD_SIZE/128;
+
+/* other simulation stuff */
 let isWorldRotating = false;
 let isPaused = false;
 
@@ -127,10 +137,46 @@ function render() {
   }
 }
 
+function forceScale(distance, idealDistance) {
+  return (distance-idealDistance);
+}
+
+const BOID_SIGHT_DISTANCE = 0.2;
+const MINIMUM_DISTANCE = 0.1;
+const FORCE_SCALE = 0.1;
 /* ------------ boid things ------------- */
 function updateBoids() {
   for (boid of boids){
     boid.doTimeStep();
+
+    // cohesion
+    for (otherBoid of boids) {
+      let thisDistance = distance(boid.position, otherBoid.position);
+      if (thisDistance < BOID_SIGHT_DISTANCE) {
+        // We can see another boid! Do cohesion/alignment/separation
+
+        // ---------- separation ---------- //
+        // separation first: if distance less than minimum, force exactly 
+        // away from otherBoid
+
+        let thisForce = scalarMultiply(
+          subtract(boid.position, otherBoid.position), 
+          FORCE_SCALE
+        );
+        boid.applyForce(thisForce);
+        // let thisForce = scalarMultiply(
+        //   subtract(boid.position, otherBoid.position), 
+        //   forceScale(thisDistance, MINIMUM_DISTANCE)
+        // );
+        // boid.applyForce(thisForce);
+
+        // ---------- calculate average velocity and position ---------- //
+        
+        // ---------- separation ---------- //
+        // add force to move towards average velocity and position 
+        // (cohesion/alignment)
+      }
+    }
 
     // if they fly past the boundary, wrap around to other side
     if(boid.position[0] > WORLD_COORDINATES.x_max) { 
@@ -157,8 +203,6 @@ function updateBoids() {
 }
 
 function createBoids() {
-  const NUM_BOIDS = 100;
-  const SPEED_FACTOR = 1/128;
 
   for(let i = 0; i < NUM_BOIDS; i++){
     let this_position = [
@@ -167,9 +211,9 @@ function createBoids() {
       WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
     ];
     let this_velocity = [
-      Math.random() * WORLD_WIDTH  * SPEED_FACTOR,
-      Math.random() * WORLD_DEPTH  * SPEED_FACTOR,
-      Math.random() * WORLD_HEIGHT * SPEED_FACTOR,
+      Math.random() * BOID_MAX_SPEED,
+      Math.random() * BOID_MAX_SPEED,
+      Math.random() * BOID_MAX_SPEED,
     ];
     let this_acceleration = [
       0,
@@ -224,11 +268,10 @@ function drawObjects() {
   drawWireframeCube(transform);
 
   /* ----- draw boids ----- */
-  const SCALE_FACTOR = 1/64;
   const scale_transform = scale(
-    WORLD_WIDTH * SCALE_FACTOR, 
-    WORLD_DEPTH * SCALE_FACTOR, 
-    WORLD_HEIGHT * SCALE_FACTOR
+    BOID_SIZE, 
+    BOID_SIZE, 
+    BOID_SIZE
   );
 
   for (boid of boids) {

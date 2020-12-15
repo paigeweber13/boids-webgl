@@ -11,7 +11,19 @@ class Boid {
     this.acceleration = acceleration;
   }
 
+  FORCE_DEGRADE_AMOUNT = 1;
+
   doTimeStep(){
+    // if(this.acceleration[0] > 0){
+    //   this.acceleration[0] -= this.FORCE_DEGRADE_AMOUNT;
+    // }
+    // if(this.acceleration[1] > 0){
+    //   this.acceleration[1] -= this.FORCE_DEGRADE_AMOUNT;
+    // }
+    // if(this.acceleration[2] > 0){
+    //   this.acceleration[2] -= this.FORCE_DEGRADE_AMOUNT;
+    // }
+
     this.velocity[0] += this.acceleration[0];
     this.velocity[1] += this.acceleration[1];
     this.velocity[2] += this.acceleration[2];
