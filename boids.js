@@ -606,4 +606,9 @@ function setListeners() {
 function resetSimulation() {
   boids = [];
   createBoids();
+
+  // render one frame if we're paused
+  if(isPaused){
+    render();
+  }
 }
