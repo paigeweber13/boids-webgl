@@ -153,10 +153,10 @@ function updateBoids() {
     for (otherBoid of boids) {
 
       let thisDistance = distance(boid.position, otherBoid.position);
-      const BOID_SIGHT_DISTANCE = 0.1;
+      const BOID_SIGHT_DISTANCE = 0.2;
       if (thisDistance < BOID_SIGHT_DISTANCE && otherBoid.id !== boid.id) {
         // We can see another boid!
-        console.log("boid", boid.id, "can see boid", otherBoid.id);
+        // console.log("boid", boid.id, "can see boid", otherBoid.id);
         numNeighbors++;
 
         const MINIMUM_DISTANCE = 0.1;
@@ -173,9 +173,9 @@ function updateBoids() {
     scalarMultiply(neighborAveragePosition, 1/numNeighbors);
     scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
 
-    // cohesion(boid, neighborAveragePosition);
+    cohesion(boid, neighborAveragePosition);
 
-    // alignment(boid, neighborAverageVelocity);
+    alignment(boid, neighborAverageVelocity);
 
     doWorldBoundaries(boid);
   }
@@ -187,10 +187,12 @@ function alignment(boid, neighborAverageVelocity){
 
   const FORCE_SCALE_ALIGNMENT = 0.01;
   thisForce = scalarMultiply(
-    add(boid.velocity, neighborAverageVelocity), 
+    subtract(neighborAverageVelocity, boid.velocity), 
     FORCE_SCALE_ALIGNMENT
   );
   boid.applyForce(thisForce);
+
+  // console.log("ALIGNMENT: applying force ", thisForce);
 }
 
 function cohesion(boid, neighborAveragePosition){
@@ -198,12 +200,14 @@ function cohesion(boid, neighborAveragePosition){
   // add force to move towards average velocity and position 
   // (cohesion/alignment)
 
-  const FORCE_SCALE_COHESION = 0.01;
+  const FORCE_SCALE_COHESION = 0.001;
   let thisForce = scalarMultiply(
-    add(boid.position, neighborAveragePosition), 
+    subtract(neighborAveragePosition, boid.position), 
     FORCE_SCALE_COHESION
   );
   boid.applyForce(thisForce);
+
+  // console.log("COHESION: applying force ", thisForce);
 }
 
 function separation(boid, otherBoid){
@@ -211,14 +215,16 @@ function separation(boid, otherBoid){
   // separation first: if distance less than minimum, force exactly 
   // away from otherBoid
 
-  const FORCE_SCALE_SEPARATION = 0.01;
+  const FORCE_SCALE_SEPARATION = 1.0;
   let thisForce = scalarMultiply(
     subtract(boid.position, otherBoid.position), 
     // subtract(otherBoid.position, boid.position), 
     FORCE_SCALE_SEPARATION
   );
   boid.applyForce(thisForce);
-  console.log("SEPARATION: applying force ", thisForce);
+
+  // console.log("SEPARATION: applying force ", thisForce);
+
   // let thisForce = scalarMultiply(
   //   subtract(boid.position, otherBoid.position), 
   //   forceScale(thisDistance, MINIMUM_DISTANCE)
@@ -263,12 +269,7 @@ function createBoids() {
       Math.random() * BOID_MAX_SPEED,
       Math.random() * BOID_MAX_SPEED,
     ];
-    let this_acceleration = [
-      0,
-      0,
-      0,
-    ];
-    boids.push(new Boid(i, this_position, this_velocity, this_acceleration));
+    boids.push(new Boid(i, this_position, this_velocity));
   }
 }
 
