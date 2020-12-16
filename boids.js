@@ -141,64 +141,112 @@ function forceScale(distance, idealDistance) {
   return (distance-idealDistance);
 }
 
-const BOID_SIGHT_DISTANCE = 0.2;
-const MINIMUM_DISTANCE = 0.1;
-const FORCE_SCALE = 0.1;
 /* ------------ boid things ------------- */
 function updateBoids() {
   for (boid of boids){
     boid.doTimeStep();
 
-    // cohesion
+    let numNeighbors = 0;
+    let neighborAverageVelocity = [0, 0, 0];
+    let neighborAveragePosition = [0, 0, 0];
+
     for (otherBoid of boids) {
+
       let thisDistance = distance(boid.position, otherBoid.position);
-      if (thisDistance < BOID_SIGHT_DISTANCE) {
-        // We can see another boid! Do cohesion/alignment/separation
+      const BOID_SIGHT_DISTANCE = 0.1;
+      if (thisDistance < BOID_SIGHT_DISTANCE && otherBoid.id !== boid.id) {
+        // We can see another boid!
+        console.log("boid", boid.id, "can see boid", otherBoid.id);
+        numNeighbors++;
 
-        // ---------- separation ---------- //
-        // separation first: if distance less than minimum, force exactly 
-        // away from otherBoid
-
-        let thisForce = scalarMultiply(
-          subtract(boid.position, otherBoid.position), 
-          FORCE_SCALE
-        );
-        boid.applyForce(thisForce);
-        // let thisForce = scalarMultiply(
-        //   subtract(boid.position, otherBoid.position), 
-        //   forceScale(thisDistance, MINIMUM_DISTANCE)
-        // );
-        // boid.applyForce(thisForce);
+        const MINIMUM_DISTANCE = 0.1;
+        if(thisDistance < MINIMUM_DISTANCE){
+          separation(boid, otherBoid);
+        }
 
         // ---------- calculate average velocity and position ---------- //
-        
-        // ---------- separation ---------- //
-        // add force to move towards average velocity and position 
-        // (cohesion/alignment)
+        neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
+        neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
       }
     }
 
-    // if they fly past the boundary, wrap around to other side
-    if(boid.position[0] > WORLD_COORDINATES.x_max) { 
-      boid.position[0] = WORLD_COORDINATES.x_min 
-    }
-    else if(boid.position[0] < WORLD_COORDINATES.x_min) { 
-      boid.position[0] = WORLD_COORDINATES.x_max 
-    }
+    scalarMultiply(neighborAveragePosition, 1/numNeighbors);
+    scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
 
-    if(boid.position[1] > WORLD_COORDINATES.y_max) { 
-      boid.position[1] = WORLD_COORDINATES.y_min 
-    }
-    else if(boid.position[1] < WORLD_COORDINATES.y_min) { 
-      boid.position[1] = WORLD_COORDINATES.y_max
-    }
+    // cohesion(boid, neighborAveragePosition);
 
-    if(boid.position[2] > WORLD_COORDINATES.z_max) { 
-      boid.position[2] = WORLD_COORDINATES.z_min 
-    }
-    else if(boid.position[2] < WORLD_COORDINATES.z_min) { 
-      boid.position[2] = WORLD_COORDINATES.z_max
-    }
+    // alignment(boid, neighborAverageVelocity);
+
+    doWorldBoundaries(boid);
+  }
+}
+
+function alignment(boid, neighborAverageVelocity){
+  // ---------- alignment ---------- //
+  // find "steering": diff between my velocity and 
+
+  const FORCE_SCALE_ALIGNMENT = 0.01;
+  thisForce = scalarMultiply(
+    add(boid.velocity, neighborAverageVelocity), 
+    FORCE_SCALE_ALIGNMENT
+  );
+  boid.applyForce(thisForce);
+}
+
+function cohesion(boid, neighborAveragePosition){
+  // ---------- cohesion ---------- //
+  // add force to move towards average velocity and position 
+  // (cohesion/alignment)
+
+  const FORCE_SCALE_COHESION = 0.01;
+  let thisForce = scalarMultiply(
+    add(boid.position, neighborAveragePosition), 
+    FORCE_SCALE_COHESION
+  );
+  boid.applyForce(thisForce);
+}
+
+function separation(boid, otherBoid){
+  // ---------- separation ---------- //
+  // separation first: if distance less than minimum, force exactly 
+  // away from otherBoid
+
+  const FORCE_SCALE_SEPARATION = 0.01;
+  let thisForce = scalarMultiply(
+    subtract(boid.position, otherBoid.position), 
+    // subtract(otherBoid.position, boid.position), 
+    FORCE_SCALE_SEPARATION
+  );
+  boid.applyForce(thisForce);
+  console.log("SEPARATION: applying force ", thisForce);
+  // let thisForce = scalarMultiply(
+  //   subtract(boid.position, otherBoid.position), 
+  //   forceScale(thisDistance, MINIMUM_DISTANCE)
+  // );
+  // boid.applyForce(thisForce);
+}
+
+function doWorldBoundaries(boid){
+  // if they fly past the boundary, wrap around to other side
+  if(boid.position[0] > WORLD_COORDINATES.x_max) { 
+    boid.position[0] = WORLD_COORDINATES.x_min 
+  }
+  else if(boid.position[0] < WORLD_COORDINATES.x_min) { 
+    boid.position[0] = WORLD_COORDINATES.x_max 
+  }
+
+  if(boid.position[1] > WORLD_COORDINATES.y_max) { 
+    boid.position[1] = WORLD_COORDINATES.y_min 
+  }
+  else if(boid.position[1] < WORLD_COORDINATES.y_min) { 
+    boid.position[1] = WORLD_COORDINATES.y_max
+  }
+
+  if(boid.position[2] > WORLD_COORDINATES.z_max) { 
+    boid.position[2] = WORLD_COORDINATES.z_min 
+  }
+  else if(boid.position[2] < WORLD_COORDINATES.z_min) { 
+    boid.position[2] = WORLD_COORDINATES.z_max
   }
 }
 
@@ -220,7 +268,7 @@ function createBoids() {
       0,
       0,
     ];
-    boids.push(new Boid(this_position, this_velocity, this_acceleration));
+    boids.push(new Boid(i, this_position, this_velocity, this_acceleration));
   }
 }
 
