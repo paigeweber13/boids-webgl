@@ -49,8 +49,10 @@ const NUM_BOIDS = 100;
 // just the average of the 3 dimensions
 const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
 // const BOID_SIGHT_DISTANCE = WORLD_SIZE/25;
+const BOID_SIGHT_DISTANCE = 0.3
+const MINIMUM_DISTANCE = 0.2;
 const BOID_SIZE = WORLD_SIZE/64;
-const BOID_MAX_SPEED = WORLD_SIZE/128;
+const BOID_MAX_SPEED = WORLD_SIZE/256;
 
 /* other simulation stuff */
 let isWorldRotating = false;
@@ -153,13 +155,11 @@ function updateBoids() {
     for (otherBoid of boids) {
 
       let thisDistance = distance(boid.position, otherBoid.position);
-      const BOID_SIGHT_DISTANCE = 0.2;
       if (thisDistance < BOID_SIGHT_DISTANCE && otherBoid.id !== boid.id) {
         // We can see another boid!
         // console.log("boid", boid.id, "can see boid", otherBoid.id);
         numNeighbors++;
 
-        const MINIMUM_DISTANCE = 0.1;
         if(thisDistance < MINIMUM_DISTANCE){
           separation(boid, otherBoid);
         }
@@ -170,12 +170,13 @@ function updateBoids() {
       }
     }
 
-    scalarMultiply(neighborAveragePosition, 1/numNeighbors);
-    scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
+    if(numNeighbors > 0){
+      scalarMultiply(neighborAveragePosition, 1/numNeighbors);
+      scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
 
-    cohesion(boid, neighborAveragePosition);
-
-    alignment(boid, neighborAverageVelocity);
+      cohesion(boid, neighborAveragePosition);
+      alignment(boid, neighborAverageVelocity);
+    }
 
     doWorldBoundaries(boid);
   }
@@ -183,9 +184,9 @@ function updateBoids() {
 
 function alignment(boid, neighborAverageVelocity){
   // ---------- alignment ---------- //
-  // find "steering": diff between my velocity and 
+  // find "steering": diff between my velocity and average velocity
 
-  const FORCE_SCALE_ALIGNMENT = 0.01;
+  const FORCE_SCALE_ALIGNMENT = 0.1;
   thisForce = scalarMultiply(
     subtract(neighborAverageVelocity, boid.velocity), 
     FORCE_SCALE_ALIGNMENT
@@ -200,7 +201,7 @@ function cohesion(boid, neighborAveragePosition){
   // add force to move towards average velocity and position 
   // (cohesion/alignment)
 
-  const FORCE_SCALE_COHESION = 0.001;
+  const FORCE_SCALE_COHESION = 0.10;
   let thisForce = scalarMultiply(
     subtract(neighborAveragePosition, boid.position), 
     FORCE_SCALE_COHESION
@@ -215,7 +216,7 @@ function separation(boid, otherBoid){
   // separation first: if distance less than minimum, force exactly 
   // away from otherBoid
 
-  const FORCE_SCALE_SEPARATION = 1.0;
+  const FORCE_SCALE_SEPARATION = 0.1;
   let thisForce = scalarMultiply(
     subtract(boid.position, otherBoid.position), 
     // subtract(otherBoid.position, boid.position), 
@@ -233,26 +234,28 @@ function separation(boid, otherBoid){
 }
 
 function doWorldBoundaries(boid){
-  // if they fly past the boundary, wrap around to other side
-  if(boid.position[0] > WORLD_COORDINATES.x_max) { 
-    boid.position[0] = WORLD_COORDINATES.x_min 
+  const BOUNDARY_FORCE = 0.01;
+
+  // world boundaries exert a force on each boid
+  if(boid.position[0] + BOID_SIGHT_DISTANCE > WORLD_COORDINATES.x_max) { 
+    boid.applyForce([-BOUNDARY_FORCE, 0, 0]);
   }
-  else if(boid.position[0] < WORLD_COORDINATES.x_min) { 
-    boid.position[0] = WORLD_COORDINATES.x_max 
+  else if(boid.position[0] - BOID_SIGHT_DISTANCE < WORLD_COORDINATES.x_min) { 
+    boid.applyForce([BOUNDARY_FORCE, 0, 0]);
   }
 
-  if(boid.position[1] > WORLD_COORDINATES.y_max) { 
-    boid.position[1] = WORLD_COORDINATES.y_min 
+  if(boid.position[1] + BOID_SIGHT_DISTANCE > WORLD_COORDINATES.y_max) { 
+    boid.applyForce([0, -BOUNDARY_FORCE, 0]);
   }
-  else if(boid.position[1] < WORLD_COORDINATES.y_min) { 
-    boid.position[1] = WORLD_COORDINATES.y_max
+  else if(boid.position[1] - BOID_SIGHT_DISTANCE < WORLD_COORDINATES.y_min) { 
+    boid.applyForce([0, BOUNDARY_FORCE, 0]);
   }
 
-  if(boid.position[2] > WORLD_COORDINATES.z_max) { 
-    boid.position[2] = WORLD_COORDINATES.z_min 
+  if(boid.position[2] + BOID_SIGHT_DISTANCE > WORLD_COORDINATES.z_max) { 
+    boid.applyForce([0, 0, -BOUNDARY_FORCE]);
   }
-  else if(boid.position[2] < WORLD_COORDINATES.z_min) { 
-    boid.position[2] = WORLD_COORDINATES.z_max
+  else if(boid.position[2] - BOID_SIGHT_DISTANCE < WORLD_COORDINATES.z_min) { 
+    boid.applyForce([0, 0, BOUNDARY_FORCE]);
   }
 }
 
@@ -304,6 +307,9 @@ function setWorldCoordinates() {
 
 function drawObjects() {
   let transform;
+  let rotate_transform;
+  let theta, phi;
+  let normalized_velocity;
 
   /* ----- draw world boundaries ----- */
   transform = mult(
@@ -317,6 +323,7 @@ function drawObjects() {
   drawWireframeCube(transform);
 
   /* ----- draw boids ----- */
+  // TODO: move scale_transform to GPU for faster computation
   const scale_transform = scale(
     BOID_SIZE, 
     BOID_SIZE, 
@@ -324,6 +331,19 @@ function drawObjects() {
   );
 
   for (boid of boids) {
+    // here I tried to get them pointing in the right direction, didn't work.
+    // Going to try again later.
+    /*
+    // we use slice to make a deep copy of the array
+    normalized_velocity = normalize(boid.velocity.slice());
+
+    theta = Math.acos(normalized_velocity[2]);
+    phi = Math.atan2(normalized_velocity[1], normalized_velocity[0]);
+
+    rotate_transform = mult(rotate_z(phi), rotate_y(-theta))
+
+    transform = mult(rotate_transform, scale_transform)
+    */
     transform = mult(translate(boid.position[0], boid.position[1], boid.position[2]), 
       scale_transform);
     drawTetrahedron(transform);
