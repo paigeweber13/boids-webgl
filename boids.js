@@ -19,7 +19,7 @@ let vColor;
 let program;
 let vertexColors = [];
 
-let theta = 0;
+let theta = Math.PI / 8;
 const THETA_STEP = Math.PI / 512;
 
 // coordinate system
@@ -96,8 +96,8 @@ window.onload = function init() {
   M_world_to_ndc = gl.getUniformLocation(program, "M_world_to_ndc");
   M_world_rotation = gl.getUniformLocation(program, "M_world_rotation");
 
-  // world rotation might be disabled... set to identity just in case
-  gl.uniformMatrix4fv(M_world_rotation, false, flatten(identity()));
+  // world rotation starts disabled... set to initial value
+    gl.uniformMatrix4fv(M_world_rotation, false, flatten(rotate(theta, 'z')));
 
   // create a vertex buffer - this will hold all vertices
   vBuffer = gl.createBuffer();
@@ -280,19 +280,19 @@ function createBoids() {
 
 // actually sets camera and projection
 function setCamera() {
-  let fov = Math.PI/24;
+  let fov = Math.PI/40;
   let projection = perspectiveProjectionFov(fov, fov, 1, 1000)
   gl.uniformMatrix4fv(M_projection, false, flatten(projection));
 
   let eyeVector = vec3(
-    WORLD_COORDINATES.x_max + WORLD_WIDTH * 0.2,
-    WORLD_COORDINATES.y_min + WORLD_DEPTH * -1.5,
-    WORLD_COORDINATES.z_max + WORLD_HEIGHT * 0.2,
+    WORLD_COORDINATES.x_max,
+    WORLD_COORDINATES.y_min + WORLD_DEPTH * -3.5,
+    WORLD_COORDINATES.z_max + WORLD_HEIGHT * 0.5,
   );
   let lookAtVector = vec3(
     WORLD_CENTER_X,
-    WORLD_CENTER_Y + WORLD_DEPTH * -0.3,
-    WORLD_CENTER_Z
+    WORLD_CENTER_Y,
+    WORLD_CENTER_Z - WORLD_HEIGHT * 0.1
   );
   let upVector = vec3(0, 0, 1);
 
