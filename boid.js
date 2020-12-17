@@ -9,11 +9,18 @@ class Boid {
     this.id = id;
     this.position = position;
     this.velocity = velocity;
+
+    this.initialVelocityMagnitude = length(this.velocity);
   }
 
   FORCE_DEGRADE_AMOUNT = 1;
 
   doTimeStep(){
+    if(length(this.velocity) < this.initialVelocityMagnitude) {
+      // keep moving
+      this.velocity = scalarMultiply(this.velocity, 1.1);
+    }
+
     this.position[0] += this.velocity[0];
     this.position[1] += this.velocity[1];
     this.position[2] += this.velocity[2];

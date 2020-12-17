@@ -24,12 +24,12 @@ const THETA_STEP = Math.PI / 512;
 
 // coordinate system
 const WORLD_COORDINATES = {
-  x_min: -5,
-  x_max:  5,
-  y_min: -5,
-  y_max:  5,
-  z_min: -5,
-  z_max:  5,
+  x_min: -500,
+  x_max:  500,
+  y_min: -500,
+  y_max:  500,
+  z_min: -500,
+  z_max:  500,
 }
 
 /* world boundaries */
@@ -44,15 +44,15 @@ const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
 /* boid things */
 let boids = [];
-const NUM_BOIDS = 100;
+const NUM_BOIDS = 600;
 
 // just the average of the 3 dimensions
 const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
 // const BOID_SIGHT_DISTANCE = WORLD_SIZE/25;
-const BOID_SIGHT_DISTANCE = 0.3
-const MINIMUM_DISTANCE = 0.2;
-const BOID_SIZE = WORLD_SIZE/64;
-const BOID_MAX_SPEED = WORLD_SIZE/256;
+const BOID_SIGHT_DISTANCE = 100;
+const MINIMUM_DISTANCE = 5;
+const BOID_SIZE = WORLD_SIZE/128;
+const BOID_MAX_SPEED = WORLD_SIZE/100;
 
 /* other simulation stuff */
 let isWorldRotating = false;
@@ -145,7 +145,9 @@ function forceScale(distance, idealDistance) {
 
 /* ------------ boid things ------------- */
 function updateBoids() {
+    let avg_pos = [0, 0, 0];
   for (boid of boids){
+    avg_pos = add(avg_pos, boid.position);
     boid.doTimeStep();
 
     let numNeighbors = 0;
@@ -171,8 +173,8 @@ function updateBoids() {
     }
 
     if(numNeighbors > 0){
-      scalarMultiply(neighborAveragePosition, 1/numNeighbors);
-      scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
+      neighborAveragePosition = scalarMultiply(neighborAveragePosition, 1/numNeighbors);
+      neighborAverageVelocity = scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
 
       cohesion(boid, neighborAveragePosition);
       alignment(boid, neighborAverageVelocity);
@@ -180,6 +182,12 @@ function updateBoids() {
 
     doWorldBoundaries(boid);
   }
+
+  // console.log("total position: ", avg_pos);
+  // avg_pos = scalarMultiply(avg_pos, 1/NUM_BOIDS);
+  // console.log("average position: ", avg_pos);
+  // console.log("boid 0 pos: ", boids[0].position);
+  // console.log("average pos minus boid 0 pos: ", subtract(avg_pos, boids[0].position));
 }
 
 function alignment(boid, neighborAverageVelocity){
@@ -198,14 +206,16 @@ function alignment(boid, neighborAverageVelocity){
 
 function cohesion(boid, neighborAveragePosition){
   // ---------- cohesion ---------- //
-  // add force to move towards average velocity and position 
+  // add force to move towards average position 
   // (cohesion/alignment)
 
-  const FORCE_SCALE_COHESION = 0.10;
+  const FORCE_SCALE_COHESION = 0.01;
   let thisForce = scalarMultiply(
     subtract(neighborAveragePosition, boid.position), 
+    // subtract(boid.position, neighborAveragePosition), 
     FORCE_SCALE_COHESION
   );
+  // console.log("cohesion force for boid ", boid.id, ": ", thisForce);
   boid.applyForce(thisForce);
 
   // console.log("COHESION: applying force ", thisForce);
@@ -216,12 +226,12 @@ function separation(boid, otherBoid){
   // separation first: if distance less than minimum, force exactly 
   // away from otherBoid
 
-  const FORCE_SCALE_SEPARATION = 0.1;
+  const FORCE_SCALE_SEPARATION = 1.0;
   let thisForce = scalarMultiply(
     subtract(boid.position, otherBoid.position), 
-    // subtract(otherBoid.position, boid.position), 
     FORCE_SCALE_SEPARATION
   );
+
   boid.applyForce(thisForce);
 
   // console.log("SEPARATION: applying force ", thisForce);
@@ -234,43 +244,73 @@ function separation(boid, otherBoid){
 }
 
 function doWorldBoundaries(boid){
-  const BOUNDARY_FORCE = 0.01;
+  // const BOUNDARY_FORCE = 1.0;
+  // const BOUNDARY_THRESHOLD = WORLD_SIZE/10;
 
   // world boundaries exert a force on each boid
-  if(boid.position[0] + BOID_SIGHT_DISTANCE > WORLD_COORDINATES.x_max) { 
+  /*
+  if(boid.position[0] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.x_max) { 
     boid.applyForce([-BOUNDARY_FORCE, 0, 0]);
   }
-  else if(boid.position[0] - BOID_SIGHT_DISTANCE < WORLD_COORDINATES.x_min) { 
+  else if(boid.position[0] - BOUNDARY_THRESHOLD < WORLD_COORDINATES.x_min) { 
     boid.applyForce([BOUNDARY_FORCE, 0, 0]);
   }
 
-  if(boid.position[1] + BOID_SIGHT_DISTANCE > WORLD_COORDINATES.y_max) { 
+  if(boid.position[1] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.y_max) { 
     boid.applyForce([0, -BOUNDARY_FORCE, 0]);
   }
-  else if(boid.position[1] - BOID_SIGHT_DISTANCE < WORLD_COORDINATES.y_min) { 
+  else if(boid.position[1] - BOUNDARY_THRESHOLD < WORLD_COORDINATES.y_min) { 
     boid.applyForce([0, BOUNDARY_FORCE, 0]);
   }
 
-  if(boid.position[2] + BOID_SIGHT_DISTANCE > WORLD_COORDINATES.z_max) { 
+  if(boid.position[2] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.z_max) { 
     boid.applyForce([0, 0, -BOUNDARY_FORCE]);
   }
-  else if(boid.position[2] - BOID_SIGHT_DISTANCE < WORLD_COORDINATES.z_min) { 
+  else if(boid.position[2] - BOUNDARY_THRESHOLD < WORLD_COORDINATES.z_min) { 
     boid.applyForce([0, 0, BOUNDARY_FORCE]);
+  }
+  */
+
+  if(boid.position[0] > WORLD_COORDINATES.x_max) { 
+    boid.velocity[0] = -Math.abs(boid.velocity[0]);
+  }
+  else if(boid.position[0] < WORLD_COORDINATES.x_min) { 
+    boid.velocity[0] = Math.abs(boid.velocity[0]);
+  }
+
+  if(boid.position[1] > WORLD_COORDINATES.y_max) { 
+    boid.velocity[1] = -Math.abs(boid.velocity[1]);
+  }
+  else if(boid.position[1] < WORLD_COORDINATES.y_min) { 
+    boid.velocity[1] = Math.abs(boid.velocity[1]);
+  }
+
+  if(boid.position[2] > WORLD_COORDINATES.z_max) { 
+    boid.velocity[2] = -Math.abs(boid.velocity[2]);
+  }
+  else if(boid.position[2] < WORLD_COORDINATES.z_min) { 
+    boid.velocity[2] = Math.abs(boid.velocity[2]);
   }
 }
 
 function createBoids() {
+  // portion of the world to take up. A fullness of 1.0 will use all the 
+  // space, whereas a fullness of 0.1 will use one tenth of the world
+  const FULLNESS = 1.0;
 
   for(let i = 0; i < NUM_BOIDS; i++){
     let this_position = [
-      WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
-      WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
-      WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
+      WORLD_CENTER_X - WORLD_WIDTH * FULLNESS/2 + Math.random() * WORLD_WIDTH  * FULLNESS,
+      WORLD_CENTER_Y - WORLD_DEPTH * FULLNESS/2 + Math.random() * WORLD_DEPTH  * FULLNESS,
+      WORLD_CENTER_Z - WORLD_HEIGHT * FULLNESS/2 + Math.random() * WORLD_HEIGHT * FULLNESS
+      // WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
+      // WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
+      // WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
     ];
     let this_velocity = [
-      Math.random() * BOID_MAX_SPEED,
-      Math.random() * BOID_MAX_SPEED,
-      Math.random() * BOID_MAX_SPEED,
+      -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
+      -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
+      -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
     ];
     boids.push(new Boid(i, this_position, this_velocity));
   }
@@ -280,14 +320,14 @@ function createBoids() {
 
 // actually sets camera and projection
 function setCamera() {
-  let fov = Math.PI/40;
+  let fov = Math.PI/2000;
   let projection = perspectiveProjectionFov(fov, fov, 1, 1000)
   gl.uniformMatrix4fv(M_projection, false, flatten(projection));
 
   let eyeVector = vec3(
-    WORLD_COORDINATES.x_max,
-    WORLD_COORDINATES.y_min + WORLD_DEPTH * -3.5,
-    WORLD_COORDINATES.z_max + WORLD_HEIGHT * 0.5,
+    WORLD_CENTER_X,
+    WORLD_CENTER_Y + WORLD_DEPTH * -2.2,
+    WORLD_CENTER_Z + WORLD_HEIGHT * 0.2
   );
   let lookAtVector = vec3(
     WORLD_CENTER_X,

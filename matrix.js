@@ -58,7 +58,6 @@ function shear(sxy, syx, sxz = 0.0, syz = 0.0, szx = 0.0, szy = 0.0) {
   );
 }
 
-// rotate around the z axis. Positive is counter-clockwise
 function rotate_x(theta) {
   return mat4(
     vec4(1., 0., 0., 0.),
@@ -77,6 +76,7 @@ function rotate_y(theta) {
   );
 }
 
+// rotate around the z axis. Positive is counter-clockwise
 function rotate_z(theta) {
   return mat4(
     vec4(Math.cos(theta), -Math.sin(theta), 0., 0.),
