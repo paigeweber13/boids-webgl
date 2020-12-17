@@ -232,6 +232,13 @@ function add( u, v )
     }
 }
 
+function increaseArray(arrayToEdit, otherArray) {
+    // increases an array in-place for better memory efficiency
+    for(let i = 0; i < arrayToEdit.length; i++) {
+        arrayToEdit[i] += otherArray[i];
+    }
+}
+
 //----------------------------------------------------------------------------
 
 function subtract( u, v )

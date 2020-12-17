@@ -41,6 +41,7 @@ const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
 const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
 const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
+const WIDTH_IN_CELLS = 10;
 
 /* boid things */
 let boids = [];
@@ -167,8 +168,10 @@ function updateBoids() {
         }
 
         // ---------- calculate average velocity and position ---------- //
-        neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
-        neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
+        // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
+        // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
+        increaseArray(neighborAveragePosition, otherBoid.position);
+        increaseArray(neighborAverageVelocity, otherBoid.velocity);
       }
     }
 
@@ -244,11 +247,10 @@ function separation(boid, otherBoid){
 }
 
 function doWorldBoundaries(boid){
-  // const BOUNDARY_FORCE = 1.0;
-  // const BOUNDARY_THRESHOLD = WORLD_SIZE/10;
+  const BOUNDARY_FORCE = 1.0;
+  const BOUNDARY_THRESHOLD = WORLD_SIZE/10;
 
   // world boundaries exert a force on each boid
-  /*
   if(boid.position[0] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.x_max) { 
     boid.applyForce([-BOUNDARY_FORCE, 0, 0]);
   }
@@ -269,7 +271,6 @@ function doWorldBoundaries(boid){
   else if(boid.position[2] - BOUNDARY_THRESHOLD < WORLD_COORDINATES.z_min) { 
     boid.applyForce([0, 0, BOUNDARY_FORCE]);
   }
-  */
 
   if(boid.position[0] > WORLD_COORDINATES.x_max) { 
     boid.velocity[0] = -Math.abs(boid.velocity[0]);
