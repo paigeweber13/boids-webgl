@@ -49,11 +49,12 @@ const NUM_BOIDS = 600;
 
 // just the average of the 3 dimensions
 const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
-// const BOID_SIGHT_DISTANCE = WORLD_SIZE/25;
-const BOID_SIGHT_DISTANCE = 100;
-const MINIMUM_DISTANCE = 5;
+const BOID_SIGHT_DISTANCE = WORLD_SIZE/10;
+const MINIMUM_DISTANCE = 10;
 const BOID_SIZE = WORLD_SIZE/128;
 const BOID_MAX_SPEED = WORLD_SIZE/100;
+
+let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
 
 /* other simulation stuff */
 let isWorldRotating = false;
@@ -313,7 +314,11 @@ function createBoids() {
       -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
       -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
     ];
-    boids.push(new Boid(i, this_position, this_velocity));
+
+    let thisBoid = new Boid(i, this_position, this_velocity);
+    boids.push(thisBoid);
+
+    grid.addressBoid(thisBoid).addBoid(thisBoid);
   }
 }
 
