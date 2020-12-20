@@ -300,16 +300,20 @@ function createBoids() {
   // portion of the world to take up. A fullness of 1.0 will use all the 
   // world, whereas a fullness of 0.1 will use one tenth of the world
 
-  // because of numerical stability issues, it is not recommended to use
-  // a fullness above 0.95. When fullness is close to 1.0, some positions
-  // will exceed world boundaries due to rounding errors.
-  const FULLNESS = 0.95;
+  const FULLNESS = 1.0;
+
+  // because of numerical stability issues, we only create inside the
+  // reflect threshold. If we use the full world coordinate system, some
+  // positions will exceed world boundaries due to rounding errors.
+  let SMALL_WIDTH = WORLD_WIDTH - REFLECT_THRESHOLD;
+  let SMALL_HEIGHT = WORLD_HEIGHT - REFLECT_THRESHOLD;
+  let SMALL_DEPTH = WORLD_DEPTH - REFLECT_THRESHOLD;
 
   for (let i = 0; i < NUM_BOIDS; i++){
     let this_position = [
-      WORLD_CENTER_X - WORLD_WIDTH * FULLNESS/2 + Math.random() * WORLD_WIDTH  * FULLNESS,
-      WORLD_CENTER_Y - WORLD_DEPTH * FULLNESS/2 + Math.random() * WORLD_DEPTH  * FULLNESS,
-      WORLD_CENTER_Z - WORLD_HEIGHT * FULLNESS/2 + Math.random() * WORLD_HEIGHT * FULLNESS
+      WORLD_CENTER_X - SMALL_WIDTH * FULLNESS/2 + Math.random() * SMALL_WIDTH  * FULLNESS,
+      WORLD_CENTER_Y - SMALL_DEPTH * FULLNESS/2 + Math.random() * SMALL_DEPTH  * FULLNESS,
+      WORLD_CENTER_Z - SMALL_HEIGHT * FULLNESS/2 + Math.random() * SMALL_HEIGHT * FULLNESS
 
       // WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
       // WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
