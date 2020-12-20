@@ -1,5 +1,7 @@
 class Cell {
-  constructor(){
+  constructor(id){
+    this.id = id;
+
     // map of id -> boid object
     this.boidsInCell = {};
   }

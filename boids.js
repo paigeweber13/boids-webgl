@@ -43,18 +43,19 @@ const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
 const WIDTH_IN_CELLS = 10;
 
-/* boid things */
-let boids = [];
-const NUM_BOIDS = 600;
-
 // just the average of the 3 dimensions
 const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
+
+/* boid things */
+let boids = [];
+let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
+const NUM_BOIDS = 600;
+
 const BOID_SIGHT_DISTANCE = WORLD_SIZE/10;
 const MINIMUM_DISTANCE = 10;
 const BOID_SIZE = WORLD_SIZE/128;
 const BOID_MAX_SPEED = WORLD_SIZE/100;
-
-let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
+const REFLECT_THRESHOLD = WORLD_SIZE * 0.10;
 
 /* other simulation stuff */
 let isWorldRotating = false;
@@ -147,38 +148,42 @@ function forceScale(distance, idealDistance) {
 
 /* ------------ boid things ------------- */
 function updateBoids() {
-    let avg_pos = [0, 0, 0];
-  for (boid of boids){
-    avg_pos = add(avg_pos, boid.position);
+
+  for (let boid of boids){
     boid.doTimeStep();
 
-    let numNeighbors = 0;
+    // update own cell
+    let myCell = grid.addressBoid(boid);
+
+    if (myCell.id != boid.mostRecentCellId) {
+      // then remove from old cell and add to new
+      grid.cellsById[boid.mostRecentCellId].removeBoid(boid);
+      myCell.addBoid(boid);
+    }
+
     let neighborAverageVelocity = [0, 0, 0];
     let neighborAveragePosition = [0, 0, 0];
 
-    for (otherBoid of boids) {
+    // this function also checks if boid can see the neighbor
+    let visibleNeighbors = grid.visibleNeighbors(boid, BOID_SIGHT_DISTANCE);
 
-      let thisDistance = distance(boid.position, otherBoid.position);
-      if (thisDistance < BOID_SIGHT_DISTANCE && otherBoid.id !== boid.id) {
-        // We can see another boid!
-        // console.log("boid", boid.id, "can see boid", otherBoid.id);
-        numNeighbors++;
-
-        if(thisDistance < MINIMUM_DISTANCE){
-          separation(boid, otherBoid);
-        }
-
-        // ---------- calculate average velocity and position ---------- //
-        // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
-        // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
-        increaseArray(neighborAveragePosition, otherBoid.position);
-        increaseArray(neighborAverageVelocity, otherBoid.velocity);
+    for (let otherBoid of visibleNeighbors) {
+      // TODO: move distance check to here distance calculation isn't done
+      //  twice
+      if(distance(boid.position, otherBoid.position) < MINIMUM_DISTANCE){
+        separation(boid, otherBoid);
       }
+
+      // ---------- calculate average velocity and position ---------- //
+      // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
+      // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
+      increaseArray(neighborAveragePosition, otherBoid.position);
+      increaseArray(neighborAverageVelocity, otherBoid.velocity);
     }
 
-    if(numNeighbors > 0){
-      neighborAveragePosition = scalarMultiply(neighborAveragePosition, 1/numNeighbors);
-      neighborAverageVelocity = scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
+    if(visibleNeighbors.length > 0){
+      neighborAveragePosition = scalarMultiply(neighborAveragePosition, 1/visibleNeighbors.length);
+      neighborAverageVelocity = scalarMultiply(neighborAverageVelocity, 1/visibleNeighbors.length);
 
       cohesion(boid, neighborAveragePosition);
       alignment(boid, neighborAverageVelocity);
@@ -187,11 +192,6 @@ function updateBoids() {
     doWorldBoundaries(boid);
   }
 
-  // console.log("total position: ", avg_pos);
-  // avg_pos = scalarMultiply(avg_pos, 1/NUM_BOIDS);
-  // console.log("average position: ", avg_pos);
-  // console.log("boid 0 pos: ", boids[0].position);
-  // console.log("average pos minus boid 0 pos: ", subtract(avg_pos, boids[0].position));
 }
 
 function alignment(boid, neighborAverageVelocity){
@@ -248,8 +248,8 @@ function separation(boid, otherBoid){
 }
 
 function doWorldBoundaries(boid){
-  const BOUNDARY_FORCE = 1.0;
-  const BOUNDARY_THRESHOLD = WORLD_SIZE/10;
+  const BOUNDARY_FORCE = BOID_MAX_SPEED/50;
+  const BOUNDARY_THRESHOLD = WORLD_SIZE * 0.25;
 
   // world boundaries exert a force on each boid
   if(boid.position[0] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.x_max) { 
@@ -273,38 +273,44 @@ function doWorldBoundaries(boid){
     boid.applyForce([0, 0, BOUNDARY_FORCE]);
   }
 
-  if(boid.position[0] > WORLD_COORDINATES.x_max) { 
+  // reflect boid if it gets too close so that it doesn't go out of bounds
+  if(boid.position[0] + REFLECT_THRESHOLD > WORLD_COORDINATES.x_max) {
     boid.velocity[0] = -Math.abs(boid.velocity[0]);
   }
-  else if(boid.position[0] < WORLD_COORDINATES.x_min) { 
+  else if(boid.position[0] - REFLECT_THRESHOLD < WORLD_COORDINATES.x_min) {
     boid.velocity[0] = Math.abs(boid.velocity[0]);
   }
 
-  if(boid.position[1] > WORLD_COORDINATES.y_max) { 
+  if(boid.position[1] + REFLECT_THRESHOLD > WORLD_COORDINATES.y_max) {
     boid.velocity[1] = -Math.abs(boid.velocity[1]);
   }
-  else if(boid.position[1] < WORLD_COORDINATES.y_min) { 
+  else if(boid.position[1] - REFLECT_THRESHOLD < WORLD_COORDINATES.y_min) {
     boid.velocity[1] = Math.abs(boid.velocity[1]);
   }
 
-  if(boid.position[2] > WORLD_COORDINATES.z_max) { 
+  if(boid.position[2] + REFLECT_THRESHOLD > WORLD_COORDINATES.z_max) {
     boid.velocity[2] = -Math.abs(boid.velocity[2]);
   }
-  else if(boid.position[2] < WORLD_COORDINATES.z_min) { 
+  else if(boid.position[2] - REFLECT_THRESHOLD < WORLD_COORDINATES.z_min) {
     boid.velocity[2] = Math.abs(boid.velocity[2]);
   }
 }
 
 function createBoids() {
   // portion of the world to take up. A fullness of 1.0 will use all the 
-  // space, whereas a fullness of 0.1 will use one tenth of the world
-  const FULLNESS = 1.0;
+  // world, whereas a fullness of 0.1 will use one tenth of the world
 
-  for(let i = 0; i < NUM_BOIDS; i++){
+  // because of numerical stability issues, it is not recommended to use
+  // a fullness above 0.95. When fullness is close to 1.0, some positions
+  // will exceed world boundaries due to rounding errors.
+  const FULLNESS = 0.95;
+
+  for (let i = 0; i < NUM_BOIDS; i++){
     let this_position = [
       WORLD_CENTER_X - WORLD_WIDTH * FULLNESS/2 + Math.random() * WORLD_WIDTH  * FULLNESS,
       WORLD_CENTER_Y - WORLD_DEPTH * FULLNESS/2 + Math.random() * WORLD_DEPTH  * FULLNESS,
       WORLD_CENTER_Z - WORLD_HEIGHT * FULLNESS/2 + Math.random() * WORLD_HEIGHT * FULLNESS
+
       // WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
       // WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
       // WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
@@ -316,9 +322,12 @@ function createBoids() {
     ];
 
     let thisBoid = new Boid(i, this_position, this_velocity);
-    boids.push(thisBoid);
+    let thisCell = grid.addressBoid(thisBoid);
 
-    grid.addressBoid(thisBoid).addBoid(thisBoid);
+    thisBoid.mostRecentCellId = thisCell.id;
+    thisCell.addBoid(thisBoid);
+
+    boids.push(thisBoid);
   }
 }
 
@@ -358,13 +367,18 @@ function drawObjects() {
   let normalized_velocity;
 
   /* ----- draw world boundaries ----- */
+  console.log("1-REFLECT_THRESHOLD:", 1-REFLECT_THRESHOLD)
   transform = mult(
     // move to center of world: cube vertices are such that center of cube
     // is the origin of the cube
     translate(WORLD_CENTER_X, WORLD_CENTER_Y, WORLD_CENTER_Z),
 
     // cube width is 2, so we want to scale by (world_size/2)
-    scale(WORLD_WIDTH/2, WORLD_DEPTH/2, WORLD_HEIGHT/2)
+    scale(
+      (WORLD_WIDTH-REFLECT_THRESHOLD)/2,
+      (WORLD_DEPTH-REFLECT_THRESHOLD)/2,
+      (WORLD_HEIGHT-REFLECT_THRESHOLD)/2
+    )
   );
   drawWireframeCube(transform);
 
@@ -376,7 +390,7 @@ function drawObjects() {
     BOID_SIZE
   );
 
-  for (boid of boids) {
+  for (let boid of boids) {
     // here I tried to get them pointing in the right direction, didn't work.
     // Going to try again later.
     /*

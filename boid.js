@@ -11,9 +11,8 @@ class Boid {
     this.velocity = velocity;
 
     this.initialVelocityMagnitude = length(this.velocity);
+    this.mostRecentCellId = undefined;
   }
-
-  FORCE_DEGRADE_AMOUNT = 1;
 
   doTimeStep(){
     if(length(this.velocity) < this.initialVelocityMagnitude) {
