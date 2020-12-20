@@ -248,8 +248,8 @@ function separation(boid, otherBoid){
 }
 
 function doWorldBoundaries(boid){
-  const BOUNDARY_FORCE = BOID_MAX_SPEED/50;
-  const BOUNDARY_THRESHOLD = WORLD_SIZE * 0.25;
+  const BOUNDARY_FORCE = BOID_MAX_SPEED/10;
+  const BOUNDARY_THRESHOLD = WORLD_SIZE * 0.15;
 
   // world boundaries exert a force on each boid
   if(boid.position[0] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.x_max) { 
@@ -306,13 +306,16 @@ function createBoids() {
   // reflect threshold. If we use the full world coordinate system, some
   // positions will exceed world boundaries due to rounding errors.
   let SMALL_WIDTH = WORLD_WIDTH - REFLECT_THRESHOLD;
-  let SMALL_HEIGHT = WORLD_HEIGHT - REFLECT_THRESHOLD;
   let SMALL_DEPTH = WORLD_DEPTH - REFLECT_THRESHOLD;
+  let SMALL_HEIGHT = WORLD_HEIGHT - REFLECT_THRESHOLD;
+
+  console.log("creating boids inside a box of size", [
+    SMALL_WIDTH, SMALL_DEPTH, SMALL_HEIGHT]);
 
   for (let i = 0; i < NUM_BOIDS; i++){
     let this_position = [
-      WORLD_CENTER_X - SMALL_WIDTH * FULLNESS/2 + Math.random() * SMALL_WIDTH  * FULLNESS,
-      WORLD_CENTER_Y - SMALL_DEPTH * FULLNESS/2 + Math.random() * SMALL_DEPTH  * FULLNESS,
+      WORLD_CENTER_X - SMALL_WIDTH  * FULLNESS/2 + Math.random() * SMALL_WIDTH  * FULLNESS,
+      WORLD_CENTER_Y - SMALL_DEPTH  * FULLNESS/2 + Math.random() * SMALL_DEPTH  * FULLNESS,
       WORLD_CENTER_Z - SMALL_HEIGHT * FULLNESS/2 + Math.random() * SMALL_HEIGHT * FULLNESS
 
       // WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
@@ -371,7 +374,6 @@ function drawObjects() {
   let normalized_velocity;
 
   /* ----- draw world boundaries ----- */
-  console.log("1-REFLECT_THRESHOLD:", 1-REFLECT_THRESHOLD)
   transform = mult(
     // move to center of world: cube vertices are such that center of cube
     // is the origin of the cube

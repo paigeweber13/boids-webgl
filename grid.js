@@ -39,6 +39,20 @@ class Grid {
 
     // assumes boid is in-bounds
 
+    // TODO: remove this out-of bounds check for performance. Keep it now for
+    //  debug
+    let x = Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth);
+    let y = Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth);
+    let z = Math.floor((boid.position[2] - this.worldCoordinates.z_min) / this.cellHeight);
+    if(
+      x < 0 || x >= this.cellsPerDimension ||
+      y < 0 || y >= this.cellsPerDimension ||
+      z < 0 || z >= this.cellsPerDimension
+    ){
+      console.log("tried to address boid out of bounds. Address given was ", [x, y, z]);
+      console.log("boid that triggered this bad address is ", boid);
+    }
+
     return this.cells
       [Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth)]
       [Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth)]
