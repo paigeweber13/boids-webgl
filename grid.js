@@ -140,9 +140,9 @@ class Grid {
     for(let cell of visibleCells) {
       // Object.values() returns the "value" part of all [key, value] pairs in
       // an object
-      for(let possibleNeighbor of Object.values(cell.boidsInCell)){
+      for(let possibleNeighbor of cell.boidsInCell){
         if(
-          distance(boid.position, possibleNeighbor.position) < BOID_SIGHT_DISTANCE
+          distance(boid.position, possibleNeighbor.position) < sightDistance
           && boid.id !== possibleNeighbor.id
         ) {
           visibleNeighbors.push(possibleNeighbor);

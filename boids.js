@@ -51,10 +51,10 @@ let boids = [];
 let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
 const NUM_BOIDS = 600;
 
-const BOID_SIGHT_DISTANCE = WORLD_SIZE/10;
-const MINIMUM_DISTANCE = 10;
+const BOID_SIGHT_DISTANCE = WORLD_SIZE/15;
+const MINIMUM_DISTANCE = BOID_SIGHT_DISTANCE/10;
 const BOID_SIZE = WORLD_SIZE/128;
-const BOID_MAX_SPEED = WORLD_SIZE/100;
+const BOID_MAX_SPEED = WORLD_SIZE/200;
 const REFLECT_THRESHOLD = WORLD_SIZE * 0.10;
 
 /* other simulation stuff */
@@ -168,8 +168,6 @@ function updateBoids() {
     let visibleNeighbors = grid.visibleNeighbors(boid, BOID_SIGHT_DISTANCE);
 
     for (let otherBoid of visibleNeighbors) {
-      // TODO: move distance check to here distance calculation isn't done
-      //  twice
       if(distance(boid.position, otherBoid.position) < MINIMUM_DISTANCE){
         separation(boid, otherBoid);
       }
@@ -230,7 +228,7 @@ function separation(boid, otherBoid){
   // separation first: if distance less than minimum, force exactly 
   // away from otherBoid
 
-  const FORCE_SCALE_SEPARATION = 1.0;
+  const FORCE_SCALE_SEPARATION = 0.1;
   let thisForce = scalarMultiply(
     subtract(boid.position, otherBoid.position), 
     FORCE_SCALE_SEPARATION
@@ -308,9 +306,6 @@ function createBoids() {
   let SMALL_WIDTH = WORLD_WIDTH - REFLECT_THRESHOLD;
   let SMALL_DEPTH = WORLD_DEPTH - REFLECT_THRESHOLD;
   let SMALL_HEIGHT = WORLD_HEIGHT - REFLECT_THRESHOLD;
-
-  console.log("creating boids inside a box of size", [
-    SMALL_WIDTH, SMALL_DEPTH, SMALL_HEIGHT]);
 
   for (let i = 0; i < NUM_BOIDS; i++){
     let this_position = [

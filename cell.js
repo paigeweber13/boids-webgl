@@ -2,19 +2,19 @@ class Cell {
   constructor(id){
     this.id = id;
 
-    // map of id -> boid object
-    this.boidsInCell = {};
+    this.boidsInCell = [];
+
+    // map of id -> index of boid in "boidsInCell"
+    this.indexTracker = {};
   }
 
   addBoid(boid) {
-    this.boidsInCell[boid.id] = boid;
+    this.boidsInCell.push(boid);
+    this.indexTracker[boid.id] = this.boidsInCell.length - 1;
   }
 
   removeBoid(boid) {
-    delete this.boidsInCell[boid.id];
-  }
-
-  contains(boid) {
-    return this.boidsInCell[boid.id] !== undefined;
+    this.boidsInCell.splice(this.indexTracker[boid.id], 1);
+    delete this.indexTracker[boid.id];
   }
 }

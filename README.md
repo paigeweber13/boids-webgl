@@ -28,7 +28,7 @@ this project, but it seemed that frame rates were worse... At this point, I made
 after the change, average frame rates were worse, but the minimum frame
 rate was better.
 
-The first thing to do was eliminate the fact that we're calculating distance
-twice, so I lifted that out of the `visibleNeighbors()` function. This
-function was renamed to `getNeighbors()`, as they are no longer guaranteed to be 
-visible.
+`Object.values(object)` turns out to be very slow, so I switched the `Cell`
+class to use an Array instead of an object. Luckily, `Cell` was designed to
+abstract away the underlying data structure, so this was an easy fix.
+`distance()` Is now the function that takes the most time.
