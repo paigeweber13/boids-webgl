@@ -17,7 +17,7 @@ let iBufferCube, iBufferWireframeCube, iBufferTetrahedron;
 // other webGL things
 let vColor;
 let program;
-let vertexColors = [];
+let vertexColors;
 
 let theta = Math.PI / 8;
 const THETA_STEP = Math.PI / 512;
@@ -41,7 +41,7 @@ const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
 const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
 const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
-const WIDTH_IN_CELLS = 10;
+const WIDTH_IN_CELLS = 8;
 
 // just the average of the 3 dimensions
 const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
@@ -52,9 +52,11 @@ let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
 const NUM_BOIDS = 600;
 
 const BOID_SIGHT_DISTANCE = WORLD_SIZE/15;
-const MINIMUM_DISTANCE = BOID_SIGHT_DISTANCE/10;
+const MINIMUM_DISTANCE = BOID_SIGHT_DISTANCE/4;
 const BOID_SIZE = WORLD_SIZE/128;
-const BOID_MAX_SPEED = WORLD_SIZE/200;
+const BOID_START_SPEED = WORLD_SIZE/200;
+const BOID_MAX_SPEED = BOID_START_SPEED * 1.2;
+const BOID_MIN_SPEED = BOID_START_SPEED * 0.8;
 const REFLECT_THRESHOLD = WORLD_SIZE * 0.10;
 
 /* other simulation stuff */
@@ -135,6 +137,7 @@ function render() {
 
   doWorldRotation();
   updateBoids();
+  updateBoidColors();
   drawObjects();
 
   if(!isPaused){
@@ -153,8 +156,12 @@ function updateBoids() {
 
     if (myCell.id != boid.mostRecentCellId) {
       // then remove from old cell and add to new
-      grid.cellsById[boid.mostRecentCellId].removeBoid(boid);
+      let oldCell = grid.cellsById[boid.mostRecentCellId];
+
+      oldCell.removeBoid(boid);
       myCell.addBoid(boid);
+
+      boid.mostRecentCellId = myCell.id;
     }
 
     let neighborAverageVelocity = [0, 0, 0];
@@ -253,8 +260,113 @@ function separation(boid, otherBoid){
   // boid.applyForce(thisForce);
 }
 
+function updateBoidColors(){
+  let n = Math.random();
+  let vertexColorsBefore = vertexColors.slice();
+
+  for (let x of grid.cells) {
+    for (let y of x) {
+      for (let cell of y) {
+
+        /*
+        if(cell.boidsInCell.length > 0){
+          console.log(cell.boidsInCell.length);
+          let averageColor = [0, 0, 0, 0];
+
+          for(let boid of cell.boidsInCell) {
+            let i = boidColorIndex(boid);
+            increaseArray(averageColor, vertexColors.slice(i, i+4));
+          }
+
+          for(let i = 0; i < 4; i++){
+            averageColor[i] /= cell.boidsInCell.length;
+          }
+
+          for(let boid of cell.boidsInCell) {
+            let start = boidColorIndex(boid);
+            let colors = vertexColors.slice(start, start+4)
+
+            for(let i = 0; i < 4; i++){
+              colors[i] = averageColor[i];
+            }
+          }
+        }
+         */
+
+
+        if(cell.boidsInCell.length > 0){
+          // let averageColor = new Float32Array([0, 0, 0, 0]);
+          let averageColor = [0.0, 0.0, 0.0, 0.0];
+
+          // let m = Math.random();
+          let m = 1;
+          for(let boid of cell.boidsInCell) {
+            let start = boidColorIndex(boid);
+
+            if(m < 0.001) {
+              // console.log("average color:", averageColor);
+              // console.log("vertex colors to add:", vertexColors.slice(i, i + 4));
+              // console.log("vertex colors:", vertexColors);
+              // console.log("vertexColors[", i ,"]: ", vertexColors[i]);
+            }
+            for(let i = 0; i < 4; i++){
+              averageColor[i] += vertexColors[start+i];
+            }
+          }
+
+          if(m < 0.001) console.log("before averaging: ", averageColor);
+          for(let i = 0; i < 4; i++){
+            averageColor[i] /= cell.boidsInCell.length;
+          }
+          if(m < 0.001) console.log("after averaging: ", averageColor);
+
+          for(let boid of cell.boidsInCell) {
+            let start = boidColorIndex(boid);
+
+            if(m < 0.001) console.log("averageColor[", 0,"]: ", averageColor[0]);
+            if(m < 0.001) console.log("vertexColors[", start,"] BEFORE: ", vertexColors[start]);
+            for(let i = 0; i < 4; i++){
+              // vertexColors[start + i] = averageColor[i];
+              vertexColors[start + i] = 0.0;
+            }
+            if(m < 0.001) console.log("vertexColors[", start,"] AFTER: ", vertexColors[start]);
+          }
+        }
+
+
+      }
+    }
+  }
+
+  if(n < 0.01){
+    console.log("checking colors!");
+    for(let i = 0; i < vertexColors.length; i++){
+      if(vertexColors[i] !== vertexColorsBefore[i]){
+        console.log(
+          "colors differ. vertexColors: ", vertexColors[i],
+          " vertexColorsBefore: ", vertexColorsBefore[i]
+        );
+      }
+    }
+  }
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, vertexColors, gl.DYNAMIC_DRAW);
+  // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+  // gl.enableVertexAttribArray(vColor);
+}
+
+function boidColorIndex(boid) {
+  // skip cube color: 24 vertices * 4 entries per vertex * 4 bytes per entry
+  const START_OF_BOID_COLORS = 24*4;
+  // one tetrahedron needs `step` bytes: 4 vertices * 4 entries per vertex * 4
+  // bytes per entry
+  const STEP = 4*4;
+  return START_OF_BOID_COLORS + STEP * boid.id;
+}
+
 function doWorldBoundaries(boid){
-  const BOUNDARY_FORCE = BOID_MAX_SPEED/10;
+  const BOUNDARY_FORCE = BOID_START_SPEED/10;
   const BOUNDARY_THRESHOLD = WORLD_SIZE * 0.15;
 
   // world boundaries exert a force on each boid
@@ -326,9 +438,9 @@ function createBoids() {
       // WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
     ];
     let this_velocity = [
-      -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
-      -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
-      -BOID_MAX_SPEED + Math.random() * 2 * BOID_MAX_SPEED,
+      -BOID_START_SPEED + Math.random() * 2 * BOID_START_SPEED,
+      -BOID_START_SPEED + Math.random() * 2 * BOID_START_SPEED,
+      -BOID_START_SPEED + Math.random() * 2 * BOID_START_SPEED,
     ];
 
     let thisBoid = new Boid(i, this_position, this_velocity);
@@ -415,7 +527,7 @@ function drawObjects() {
     */
     transform = mult(translate(boid.position[0], boid.position[1], boid.position[2]), 
       scale_transform);
-    drawTetrahedron(transform);
+    drawBoid(transform, boid);
   }
 }
 
@@ -514,71 +626,29 @@ function setVertices() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferTetrahedron);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, INDICES_TETRAHEDRON, gl.STATIC_DRAW);
 
-  for (let i = 0; i < 72; i++) {
-    vertexColors.push(colors["Salmon Pink"]);
+  let vertexColorArray = [];
+  for (let i = 0; i < 24; i++) {
+    vertexColorArray.push(colors["Peach Puff"]);
   }
 
-  for (let i = 0; i < 72; i++) {
-    vertexColors.push(colors["Peach Puff"]);
+  for (let i = 0; i < NUM_BOIDS; i++) {
+    let color = [Math.random(), Math.random(), Math.random(), 1.0];
+
+    for (let j = 0; j < 4; j++) {
+      // each boid has 4 vertices
+      vertexColorArray.push(color);
+    }
   }
 
-  for (let i = 0; i < 72; i++) {
-    vertexColors.push(colors["Pale Spring Bud"]);
-  }
-
-  for (let i = 0; i < 72; i++) {
-    vertexColors.push(colors.purple);
-  }
-
-  for (let i = 0; i < 72; i++) {
-    vertexColors.push(colors.red);
-  }
+  vertexColors = flatten(vertexColorArray);
 
   // send color data to GPU
   gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexColors), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, vertexColors, gl.DYNAMIC_DRAW);
 
   vColor = gl.getAttribLocation(program, "vColor");
   gl.enableVertexAttribArray(vColor);
 
-}
-
-function drawCube(transform, color) {
-  // bind cube buffer
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferCube);
-
-  // copy transform matrix to GPU
-  gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
-
-  // variables we need later
-  const STEP = 1152;
-  let color_offset = STEP * STEP;
-
-  // recognize user input for color
-  switch (color) {
-    case "Salmon Pink":
-      color_offset = 0 * STEP;
-      break;
-    case "Peach Puff":
-      color_offset = 1 * STEP;
-      break;
-    case "Pale Spring Bud":
-      color_offset = 2 * STEP;
-      break;
-    case "purple":
-      color_offset = 3 * STEP;
-      break;
-    case "red":
-      color_offset = 4 * STEP;
-      break;
-  }
-
-  // set offset to select color
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, color_offset);
-
-  // draw cube
-  // gl.drawElements(gl.LINE_STRIP, 36, gl.UNSIGNED_BYTE, 0);
-  gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
 }
 
 function drawWireframeCube(transform, color) {
@@ -589,23 +659,26 @@ function drawWireframeCube(transform, color) {
   gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
   // set offset to select color
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 1152);
+  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
 
   // draw cube
   gl.drawElements(gl.LINES, 24, gl.UNSIGNED_BYTE, 0);
 }
 
-function drawTetrahedron(transform) {
+function drawBoid(transform, boid) {
   // bind cube buffer
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferTetrahedron);
 
   // copy transform matrix to GPU
   gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
-  // set offset to select color
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+  // set offset to select color. Must multiply by 4 to get offset in bytes
+  let offset = boidColorIndex(boid) * 4;
+  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, offset);
+  gl.enableVertexAttribArray(vColor);
 
-  // draw cube
+  // draw tetrahedron
   gl.drawElements(gl.TRIANGLES, 12, gl.UNSIGNED_BYTE, 0);
 }
 

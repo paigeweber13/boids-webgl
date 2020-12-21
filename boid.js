@@ -10,14 +10,18 @@ class Boid {
     this.position = position;
     this.velocity = velocity;
 
-    this.initialVelocityMagnitude = length(this.velocity);
     this.mostRecentCellId = undefined;
   }
 
   doTimeStep(){
-    if(length(this.velocity) < this.initialVelocityMagnitude) {
-      // keep moving
+    // keeps the boids moving. Not strictly necessary (`separation()` adds
+    // enough entropy to the system that it can keep moving) but it keeps
+    // things at a good pace
+    let speed = length(this.velocity);
+    if(speed < BOID_MIN_SPEED) {
       this.velocity = scalarMultiply(this.velocity, 1.1);
+    } else if (speed > BOID_MAX_SPEED) {
+      this.velocity = scalarMultiply(this.velocity, 0.9);
     }
 
     this.position[0] += this.velocity[0];
