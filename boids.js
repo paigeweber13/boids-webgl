@@ -142,10 +142,6 @@ function render() {
   }
 }
 
-function forceScale(distance, idealDistance) {
-  return (distance-idealDistance);
-}
-
 /* ------------ boid things ------------- */
 function updateBoids() {
 
@@ -165,26 +161,28 @@ function updateBoids() {
     let neighborAveragePosition = [0, 0, 0];
 
     // this function also checks if boid can see the neighbor
-    let neighbors = grid.neighbors(boid, BOID_SIGHT_DISTANCE);
+    // let neighbors = grid.neighbors(boid, BOID_SIGHT_DISTANCE);
     let numNeighbors = 0;
 
-    for (let otherBoid of neighbors) {
-      if(boid.id !== otherBoid.id) {
-        let thisDistance = distance(boid.position, otherBoid.position);
+    for (let cell of grid.visibleCells(boid, BOID_SIGHT_DISTANCE)) {
+      for (let otherBoid of cell.boidsInCell) {
+        if (boid.id !== otherBoid.id) {
+          let thisDistance = distance(boid.position, otherBoid.position);
 
-        if (thisDistance < BOID_SIGHT_DISTANCE) {
-          numNeighbors++;
-          // console.log("thisDistance       : ", thisDistance);
-          // console.log("BOID_SIGHT_DISTANCE: ", BOID_SIGHT_DISTANCE);
-          if (thisDistance < MINIMUM_DISTANCE) {
-            separation(boid, otherBoid);
+          if (thisDistance < BOID_SIGHT_DISTANCE) {
+            numNeighbors++;
+            // console.log("thisDistance       : ", thisDistance);
+            // console.log("BOID_SIGHT_DISTANCE: ", BOID_SIGHT_DISTANCE);
+            if (thisDistance < MINIMUM_DISTANCE) {
+              separation(boid, otherBoid);
+            }
+
+            // ---------- calculate average velocity and position ---------- //
+            // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
+            // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
+            increaseArray(neighborAveragePosition, otherBoid.position);
+            increaseArray(neighborAverageVelocity, otherBoid.velocity);
           }
-
-          // ---------- calculate average velocity and position ---------- //
-          // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
-          // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
-          increaseArray(neighborAveragePosition, otherBoid.position);
-          increaseArray(neighborAverageVelocity, otherBoid.velocity);
         }
       }
     }

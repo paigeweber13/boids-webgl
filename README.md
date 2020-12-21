@@ -7,6 +7,7 @@ An implementation of Craig Reynolds's "Boids" program
 - [ ] fix speed problems with grid system
 - [ ] add second, close-up camera
 - [ ] average color of boids in nearby cells
+- [ ] check TODOs
 - [ ] point boids in the right direction
 
 # Summary of Optimizations
@@ -16,6 +17,7 @@ An implementation of Craig Reynolds's "Boids" program
 - Restructured the `Cell` class so that I could remove `Object.values(object)`,
   which is very slow.
 - Restructured `Grid` to reduce time taken by `distance()` by 25%
+- Removed slow `neighbors()` call, lifting functionality into `updateBoids()`
   
 # Performance Tuning
 Immediately after finishing the naive implementation, I noticed that `add()` 
@@ -41,3 +43,10 @@ The call to `distance()` was then lifted out of `Grid` and into the
 `updateBoids()` function, which reduced the time eaten up by calls to
 `distance()`. After this change, `after-grid-system-03.json` was recorded,
 which demonstrates how much less time is taken by `distance()`. 
+
+The next improvement was to lift the functionality from `Grid.neighbors()` into 
+`updateBoids()`. After this, `after-grid-system-04.json` was recorded.
+
+At this point it seems the logical next step is to parallelize calls to 
+`distance()` by offloading computation to the GPU, but (for now) that is
+outside the scope of this project.

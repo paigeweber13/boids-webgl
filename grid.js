@@ -42,6 +42,7 @@ class Grid {
     // TODO: remove this out-of bounds check for performance. Keep it now for
     //  debug
 
+    /*
     let x = Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth);
     let y = Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth);
     let z = Math.floor((boid.position[2] - this.worldCoordinates.z_min) / this.cellHeight);
@@ -54,6 +55,7 @@ class Grid {
       console.log("tried to address boid out of bounds. Address given was ", [x, y, z]);
       console.log("boid that triggered this bad address is ", boid);
     }
+     */
 
     return this.cells
       [Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth)]
@@ -133,16 +135,5 @@ class Grid {
     }
 
     return visibleCells;
-  }
-
-  neighbors(boid, sightDistance){
-    let visibleCells = this.visibleCells(boid, sightDistance);
-    let neighbors = [];
-
-    for(let cell of visibleCells) {
-      Array.prototype.push.apply(neighbors, cell.boidsInCell);
-    }
-
-    return neighbors;
   }
 }
