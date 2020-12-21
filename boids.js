@@ -165,23 +165,33 @@ function updateBoids() {
     let neighborAveragePosition = [0, 0, 0];
 
     // this function also checks if boid can see the neighbor
-    let visibleNeighbors = grid.visibleNeighbors(boid, BOID_SIGHT_DISTANCE);
+    let neighbors = grid.neighbors(boid, BOID_SIGHT_DISTANCE);
+    let numNeighbors = 0;
 
-    for (let otherBoid of visibleNeighbors) {
-      if(distance(boid.position, otherBoid.position) < MINIMUM_DISTANCE){
-        separation(boid, otherBoid);
+    for (let otherBoid of neighbors) {
+      if(boid.id !== otherBoid.id) {
+        let thisDistance = distance(boid.position, otherBoid.position);
+
+        if (thisDistance < BOID_SIGHT_DISTANCE) {
+          numNeighbors++;
+          // console.log("thisDistance       : ", thisDistance);
+          // console.log("BOID_SIGHT_DISTANCE: ", BOID_SIGHT_DISTANCE);
+          if (thisDistance < MINIMUM_DISTANCE) {
+            separation(boid, otherBoid);
+          }
+
+          // ---------- calculate average velocity and position ---------- //
+          // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
+          // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
+          increaseArray(neighborAveragePosition, otherBoid.position);
+          increaseArray(neighborAverageVelocity, otherBoid.velocity);
+        }
       }
-
-      // ---------- calculate average velocity and position ---------- //
-      // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
-      // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
-      increaseArray(neighborAveragePosition, otherBoid.position);
-      increaseArray(neighborAverageVelocity, otherBoid.velocity);
     }
 
-    if(visibleNeighbors.length > 0){
-      neighborAveragePosition = scalarMultiply(neighborAveragePosition, 1/visibleNeighbors.length);
-      neighborAverageVelocity = scalarMultiply(neighborAverageVelocity, 1/visibleNeighbors.length);
+    if(numNeighbors > 0){
+      neighborAveragePosition = scalarMultiply(neighborAveragePosition, 1/numNeighbors);
+      neighborAverageVelocity = scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
 
       cohesion(boid, neighborAveragePosition);
       alignment(boid, neighborAverageVelocity);

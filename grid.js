@@ -41,13 +41,15 @@ class Grid {
 
     // TODO: remove this out-of bounds check for performance. Keep it now for
     //  debug
+
     let x = Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth);
     let y = Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth);
     let z = Math.floor((boid.position[2] - this.worldCoordinates.z_min) / this.cellHeight);
     if(
       x < 0 || x >= this.cellsPerDimension ||
       y < 0 || y >= this.cellsPerDimension ||
-      z < 0 || z >= this.cellsPerDimension
+      z < 0 || z >= this.cellsPerDimension ||
+      isNaN(x) || isNaN(y) || isNaN(z)
     ){
       console.log("tried to address boid out of bounds. Address given was ", [x, y, z]);
       console.log("boid that triggered this bad address is ", boid);
@@ -133,23 +135,14 @@ class Grid {
     return visibleCells;
   }
 
-  visibleNeighbors(boid, sightDistance){
+  neighbors(boid, sightDistance){
     let visibleCells = this.visibleCells(boid, sightDistance);
-    let visibleNeighbors = [];
+    let neighbors = [];
 
     for(let cell of visibleCells) {
-      // Object.values() returns the "value" part of all [key, value] pairs in
-      // an object
-      for(let possibleNeighbor of cell.boidsInCell){
-        if(
-          distance(boid.position, possibleNeighbor.position) < sightDistance
-          && boid.id !== possibleNeighbor.id
-        ) {
-          visibleNeighbors.push(possibleNeighbor);
-        }
-      }
+      Array.prototype.push.apply(neighbors, cell.boidsInCell);
     }
 
-    return visibleNeighbors;
+    return neighbors;
   }
 }
