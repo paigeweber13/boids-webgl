@@ -11,7 +11,9 @@ let M_camera;
 let M_world_rotation;
 
 // buffers
-let vBuffer, cBuffer;
+let vBuffer;
+// let cBuffer;
+let uColor;
 let iBufferCube, iBufferWireframeCube, iBufferTetrahedron;
 
 // other webGL things
@@ -41,7 +43,7 @@ const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
 const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
 const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
-const WIDTH_IN_CELLS = 8;
+const WIDTH_IN_CELLS = 16;
 
 // just the average of the 3 dimensions
 const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
@@ -101,6 +103,8 @@ window.onload = function init() {
   M_world_to_ndc = gl.getUniformLocation(program, "M_world_to_ndc");
   M_world_rotation = gl.getUniformLocation(program, "M_world_rotation");
 
+  uColor = gl.getUniformLocation(program, "vColor");
+
   // world rotation starts disabled... set to initial value
     gl.uniformMatrix4fv(M_world_rotation, false, flatten(rotate(theta, 'z')));
 
@@ -113,7 +117,7 @@ window.onload = function init() {
   iBufferTetrahedron = gl.createBuffer();
 
   // color buffer
-  cBuffer = gl.createBuffer();
+  // cBuffer = gl.createBuffer();
 
   setVertices();
   setWorldCoordinates();
@@ -133,7 +137,7 @@ function render() {
   // bind iBufferCube as index buffer
   // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferCube);
   // bind cBuffer as array buffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
 
   doWorldRotation();
   updateBoids();
@@ -212,7 +216,7 @@ function alignment(boid, neighborAverageVelocity){
   // find "steering": diff between my velocity and average velocity
 
   const FORCE_SCALE_ALIGNMENT = 0.1;
-  thisForce = scalarMultiply(
+  let thisForce = scalarMultiply(
     subtract(neighborAverageVelocity, boid.velocity), 
     FORCE_SCALE_ALIGNMENT
   );
@@ -261,9 +265,6 @@ function separation(boid, otherBoid){
 }
 
 function updateBoidColors(){
-  let n = Math.random();
-  let vertexColorsBefore = vertexColors.slice();
-
   for (let x of grid.cells) {
     for (let y of x) {
       for (let cell of y) {
@@ -294,6 +295,7 @@ function updateBoidColors(){
          */
 
 
+        /*
         if(cell.boidsInCell.length > 0){
           // let averageColor = new Float32Array([0, 0, 0, 0]);
           let averageColor = [0.0, 0.0, 0.0, 0.0];
@@ -326,32 +328,42 @@ function updateBoidColors(){
             if(m < 0.001) console.log("averageColor[", 0,"]: ", averageColor[0]);
             if(m < 0.001) console.log("vertexColors[", start,"] BEFORE: ", vertexColors[start]);
             for(let i = 0; i < 4; i++){
-              // vertexColors[start + i] = averageColor[i];
-              vertexColors[start + i] = 0.0;
+              vertexColors[start + i] = averageColor[i];
+              // vertexColors[start + i] = 0.0;
             }
             if(m < 0.001) console.log("vertexColors[", start,"] AFTER: ", vertexColors[start]);
           }
         }
+         */
 
 
+        if(cell.boidsInCell.length > 0){
+          // let averageColor = new Float32Array([0, 0, 0, 0]);
+          let averageColor = [0.0, 0.0, 0.0, 0.0];
+
+          for(let boid of cell.boidsInCell) {
+            for(let i = 0; i < 4; i++){
+              averageColor[i] += boid.color[i];
+            }
+          }
+
+          for(let i = 0; i < 4; i++){
+            averageColor[i] /= cell.boidsInCell.length;
+          }
+
+          for(let boid of cell.boidsInCell) {
+            for(let i = 0; i < 4; i++){
+              boid.color[i] = averageColor[i];
+            }
+          }
+        }
       }
     }
   }
 
-  if(n < 0.01){
-    console.log("checking colors!");
-    for(let i = 0; i < vertexColors.length; i++){
-      if(vertexColors[i] !== vertexColorsBefore[i]){
-        console.log(
-          "colors differ. vertexColors: ", vertexColors[i],
-          " vertexColorsBefore: ", vertexColorsBefore[i]
-        );
-      }
-    }
-  }
+  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+  // gl.bufferData(gl.ARRAY_BUFFER, vertexColors, gl.DYNAMIC_DRAW);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, vertexColors, gl.DYNAMIC_DRAW);
   // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
   // gl.enableVertexAttribArray(vColor);
 }
@@ -626,6 +638,7 @@ function setVertices() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferTetrahedron);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, INDICES_TETRAHEDRON, gl.STATIC_DRAW);
 
+  /*
   let vertexColorArray = [];
   for (let i = 0; i < 24; i++) {
     vertexColorArray.push(colors["Peach Puff"]);
@@ -642,12 +655,14 @@ function setVertices() {
 
   vertexColors = flatten(vertexColorArray);
 
-  // send color data to GPU
+  send color data to GPU
   gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, vertexColors, gl.DYNAMIC_DRAW);
 
   vColor = gl.getAttribLocation(program, "vColor");
   gl.enableVertexAttribArray(vColor);
+
+   */
 
 }
 
@@ -659,9 +674,14 @@ function drawWireframeCube(transform, color) {
   gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
   // set offset to select color
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+  // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+
+  // copy color
+  gl.uniform4fv(uColor, colors["Peach Puff"]);
 
   // draw cube
+  console.log(colors["Peach Puff"].length)
+
   gl.drawElements(gl.LINES, 24, gl.UNSIGNED_BYTE, 0);
 }
 
@@ -673,10 +693,12 @@ function drawBoid(transform, boid) {
   gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
   // set offset to select color. Must multiply by 4 to get offset in bytes
-  let offset = boidColorIndex(boid) * 4;
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, offset);
-  gl.enableVertexAttribArray(vColor);
+  // let offset = boidColorIndex(boid) * 4;
+  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+  // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, offset);
+  // gl.enableVertexAttribArray(vColor);
+
+  gl.uniform4fv(uColor, boid.color);
 
   // draw tetrahedron
   gl.drawElements(gl.TRIANGLES, 12, gl.UNSIGNED_BYTE, 0);

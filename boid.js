@@ -11,6 +11,7 @@ class Boid {
     this.velocity = velocity;
 
     this.mostRecentCellId = undefined;
+    this.color = new Float32Array([Math.random(), Math.random(), Math.random(), 1.0]);
   }
 
   doTimeStep(){
