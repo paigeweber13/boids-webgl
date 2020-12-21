@@ -6,8 +6,6 @@ class Cell {
 
     // map of id -> index of boid in "boidsInCell"
     this.indexTracker = {};
-
-    this.color = [0, 0, 0, 0];
   }
 
   addBoid(boid) {

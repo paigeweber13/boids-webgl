@@ -172,7 +172,7 @@ function worldToNormalized(wc) {
 }
 
 function lookAt(eye, at, up) {
-  if (eye.length != 3 || at.length != 3 || up.length != 3) {
+  if (eye.length !== 3 || at.length !== 3 || up.length !== 3) {
     console.error("all three parameters of 'lookAt' must be vectors (lists) " +
       "of length 3");
     return null;

@@ -6,13 +6,10 @@ class Grid {
     this.worldDepth = worldCoordinates.y_max - worldCoordinates.y_min;
     this.worldHeight = worldCoordinates.z_max - worldCoordinates.z_min;
 
-    // this.worldCenter_x = worldCoordinates.x_min + this.worldWidth/2;
-    // this.worldCenter_y = worldCoordinates.y_min + this.worldDepth/2;
-    // this.worldCenter_z = worldCoordinates.z_min + this.worldHeight/2;
-
     this.cellWidth = this.worldWidth/cellsPerDimension;
     this.cellDepth = this.worldDepth/cellsPerDimension;
     this.cellHeight = this.worldHeight/cellsPerDimension;
+    console.log("cell dimensions: ", [this.cellWidth, this.cellDepth, this.cellHeight]);
 
     this.cellsPerDimension = cellsPerDimension;
     this.cells = [];
@@ -38,25 +35,6 @@ class Grid {
     // cells will be counted from x_min, y_min, z_min. Order is x, y, z
 
     // assumes boid is in-bounds
-
-    // TODO: remove this out-of bounds check for performance. Keep it now for
-    //  debug
-
-    /*
-    let x = Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth);
-    let y = Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth);
-    let z = Math.floor((boid.position[2] - this.worldCoordinates.z_min) / this.cellHeight);
-    if(
-      x < 0 || x >= this.cellsPerDimension ||
-      y < 0 || y >= this.cellsPerDimension ||
-      z < 0 || z >= this.cellsPerDimension ||
-      isNaN(x) || isNaN(y) || isNaN(z)
-    ){
-      console.log("tried to address boid out of bounds. Address given was ", [x, y, z]);
-      console.log("boid that triggered this bad address is ", boid);
-    }
-     */
-
     return this.cells
       [Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth)]
       [Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth)]

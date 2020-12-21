@@ -12,14 +12,13 @@ let M_world_rotation;
 
 // buffers
 let vBuffer;
-// let cBuffer;
 let uColor;
 let iBufferCube, iBufferWireframeCube, iBufferTetrahedron;
 
 // other webGL things
-let vColor;
+// let vColor;
 let program;
-let vertexColors;
+// let vertexColors;
 
 let theta = Math.PI / 8;
 const THETA_STEP = Math.PI / 512;
@@ -43,7 +42,7 @@ const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
 const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
 const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
 
-const WIDTH_IN_CELLS = 16;
+const WIDTH_IN_CELLS = 20;
 
 // just the average of the 3 dimensions
 const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
@@ -56,9 +55,7 @@ const NUM_BOIDS = 600;
 const BOID_SIGHT_DISTANCE = WORLD_SIZE/15;
 const MINIMUM_DISTANCE = BOID_SIGHT_DISTANCE/4;
 const BOID_SIZE = WORLD_SIZE/128;
-const BOID_START_SPEED = WORLD_SIZE/200;
-const BOID_MAX_SPEED = BOID_START_SPEED * 1.2;
-const BOID_MIN_SPEED = BOID_START_SPEED * 0.8;
+const BOID_MAX_SPEED = WORLD_SIZE/400;
 const REFLECT_THRESHOLD = WORLD_SIZE * 0.10;
 
 /* other simulation stuff */
@@ -106,7 +103,7 @@ window.onload = function init() {
   uColor = gl.getUniformLocation(program, "vColor");
 
   // world rotation starts disabled... set to initial value
-    gl.uniformMatrix4fv(M_world_rotation, false, flatten(rotate(theta, 'z')));
+  gl.uniformMatrix4fv(M_world_rotation, false, flatten(rotate(theta, 'z')));
 
   // create a vertex buffer - this will hold all vertices
   vBuffer = gl.createBuffer();
@@ -134,18 +131,18 @@ window.onload = function init() {
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // bind iBufferCube as index buffer
-  // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferCube);
-  // bind cBuffer as array buffer
-  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-
   doWorldRotation();
   updateBoids();
   updateBoidColors();
   drawObjects();
 
   if(!isPaused){
-    requestAnimFrame(render);
+    // requestAnimFrame(render);
+
+    const DELAY = 15;
+    setTimeout(
+      function () { requestAnimFrame(render); }, DELAY
+    );
   }
 }
 
@@ -158,7 +155,7 @@ function updateBoids() {
     // update own cell
     let myCell = grid.addressBoid(boid);
 
-    if (myCell.id != boid.mostRecentCellId) {
+    if (myCell.id !== boid.mostRecentCellId) {
       // then remove from old cell and add to new
       let oldCell = grid.cellsById[boid.mostRecentCellId];
 
@@ -182,15 +179,11 @@ function updateBoids() {
 
           if (thisDistance < BOID_SIGHT_DISTANCE) {
             numNeighbors++;
-            // console.log("thisDistance       : ", thisDistance);
-            // console.log("BOID_SIGHT_DISTANCE: ", BOID_SIGHT_DISTANCE);
             if (thisDistance < MINIMUM_DISTANCE) {
               separation(boid, otherBoid);
             }
 
             // ---------- calculate average velocity and position ---------- //
-            // neighborAveragePosition = add(neighborAveragePosition, otherBoid.position);
-            // neighborAverageVelocity = add(neighborAverageVelocity, otherBoid.velocity);
             increaseArray(neighborAveragePosition, otherBoid.position);
             increaseArray(neighborAverageVelocity, otherBoid.velocity);
           }
@@ -221,8 +214,6 @@ function alignment(boid, neighborAverageVelocity){
     FORCE_SCALE_ALIGNMENT
   );
   boid.applyForce(thisForce);
-
-  // console.log("ALIGNMENT: applying force ", thisForce);
 }
 
 function cohesion(boid, neighborAveragePosition){
@@ -233,13 +224,9 @@ function cohesion(boid, neighborAveragePosition){
   const FORCE_SCALE_COHESION = 0.01;
   let thisForce = scalarMultiply(
     subtract(neighborAveragePosition, boid.position), 
-    // subtract(boid.position, neighborAveragePosition), 
     FORCE_SCALE_COHESION
   );
-  // console.log("cohesion force for boid ", boid.id, ": ", thisForce);
   boid.applyForce(thisForce);
-
-  // console.log("COHESION: applying force ", thisForce);
 }
 
 function separation(boid, otherBoid){
@@ -247,103 +234,25 @@ function separation(boid, otherBoid){
   // separation first: if distance less than minimum, force exactly 
   // away from otherBoid
 
-  const FORCE_SCALE_SEPARATION = 0.1;
+  const FORCE_SCALE_SEPARATION = 0.01;
   let thisForce = scalarMultiply(
     subtract(boid.position, otherBoid.position), 
     FORCE_SCALE_SEPARATION
   );
 
   boid.applyForce(thisForce);
-
-  // console.log("SEPARATION: applying force ", thisForce);
-
-  // let thisForce = scalarMultiply(
-  //   subtract(boid.position, otherBoid.position), 
-  //   forceScale(thisDistance, MINIMUM_DISTANCE)
-  // );
-  // boid.applyForce(thisForce);
 }
 
 function updateBoidColors(){
   for (let x of grid.cells) {
     for (let y of x) {
       for (let cell of y) {
-
-        /*
         if(cell.boidsInCell.length > 0){
-          console.log(cell.boidsInCell.length);
-          let averageColor = [0, 0, 0, 0];
-
-          for(let boid of cell.boidsInCell) {
-            let i = boidColorIndex(boid);
-            increaseArray(averageColor, vertexColors.slice(i, i+4));
-          }
-
-          for(let i = 0; i < 4; i++){
-            averageColor[i] /= cell.boidsInCell.length;
-          }
-
-          for(let boid of cell.boidsInCell) {
-            let start = boidColorIndex(boid);
-            let colors = vertexColors.slice(start, start+4)
-
-            for(let i = 0; i < 4; i++){
-              colors[i] = averageColor[i];
-            }
-          }
-        }
-         */
-
-
-        /*
-        if(cell.boidsInCell.length > 0){
-          // let averageColor = new Float32Array([0, 0, 0, 0]);
-          let averageColor = [0.0, 0.0, 0.0, 0.0];
-
-          // let m = Math.random();
-          let m = 1;
-          for(let boid of cell.boidsInCell) {
-            let start = boidColorIndex(boid);
-
-            if(m < 0.001) {
-              // console.log("average color:", averageColor);
-              // console.log("vertex colors to add:", vertexColors.slice(i, i + 4));
-              // console.log("vertex colors:", vertexColors);
-              // console.log("vertexColors[", i ,"]: ", vertexColors[i]);
-            }
-            for(let i = 0; i < 4; i++){
-              averageColor[i] += vertexColors[start+i];
-            }
-          }
-
-          if(m < 0.001) console.log("before averaging: ", averageColor);
-          for(let i = 0; i < 4; i++){
-            averageColor[i] /= cell.boidsInCell.length;
-          }
-          if(m < 0.001) console.log("after averaging: ", averageColor);
-
-          for(let boid of cell.boidsInCell) {
-            let start = boidColorIndex(boid);
-
-            if(m < 0.001) console.log("averageColor[", 0,"]: ", averageColor[0]);
-            if(m < 0.001) console.log("vertexColors[", start,"] BEFORE: ", vertexColors[start]);
-            for(let i = 0; i < 4; i++){
-              vertexColors[start + i] = averageColor[i];
-              // vertexColors[start + i] = 0.0;
-            }
-            if(m < 0.001) console.log("vertexColors[", start,"] AFTER: ", vertexColors[start]);
-          }
-        }
-         */
-
-
-        if(cell.boidsInCell.length > 0){
-          // let averageColor = new Float32Array([0, 0, 0, 0]);
           let averageColor = [0.0, 0.0, 0.0, 0.0];
 
           for(let boid of cell.boidsInCell) {
             for(let i = 0; i < 4; i++){
-              averageColor[i] += boid.color[i];
+              averageColor[i] += boid.modelColor[i];
             }
           }
 
@@ -353,56 +262,16 @@ function updateBoidColors(){
 
           for(let boid of cell.boidsInCell) {
             for(let i = 0; i < 4; i++){
-              boid.color[i] = averageColor[i];
+              boid.modelColor[i] = averageColor[i];
             }
           }
         }
       }
     }
   }
-
-  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  // gl.bufferData(gl.ARRAY_BUFFER, vertexColors, gl.DYNAMIC_DRAW);
-
-  // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-  // gl.enableVertexAttribArray(vColor);
-}
-
-function boidColorIndex(boid) {
-  // skip cube color: 24 vertices * 4 entries per vertex * 4 bytes per entry
-  const START_OF_BOID_COLORS = 24*4;
-  // one tetrahedron needs `step` bytes: 4 vertices * 4 entries per vertex * 4
-  // bytes per entry
-  const STEP = 4*4;
-  return START_OF_BOID_COLORS + STEP * boid.id;
 }
 
 function doWorldBoundaries(boid){
-  const BOUNDARY_FORCE = BOID_START_SPEED/10;
-  const BOUNDARY_THRESHOLD = WORLD_SIZE * 0.15;
-
-  // world boundaries exert a force on each boid
-  if(boid.position[0] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.x_max) { 
-    boid.applyForce([-BOUNDARY_FORCE, 0, 0]);
-  }
-  else if(boid.position[0] - BOUNDARY_THRESHOLD < WORLD_COORDINATES.x_min) { 
-    boid.applyForce([BOUNDARY_FORCE, 0, 0]);
-  }
-
-  if(boid.position[1] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.y_max) { 
-    boid.applyForce([0, -BOUNDARY_FORCE, 0]);
-  }
-  else if(boid.position[1] - BOUNDARY_THRESHOLD < WORLD_COORDINATES.y_min) { 
-    boid.applyForce([0, BOUNDARY_FORCE, 0]);
-  }
-
-  if(boid.position[2] + BOUNDARY_THRESHOLD > WORLD_COORDINATES.z_max) { 
-    boid.applyForce([0, 0, -BOUNDARY_FORCE]);
-  }
-  else if(boid.position[2] - BOUNDARY_THRESHOLD < WORLD_COORDINATES.z_min) { 
-    boid.applyForce([0, 0, BOUNDARY_FORCE]);
-  }
-
   // reflect boid if it gets too close so that it doesn't go out of bounds
   if(boid.position[0] + REFLECT_THRESHOLD > WORLD_COORDINATES.x_max) {
     boid.velocity[0] = -Math.abs(boid.velocity[0]);
@@ -444,15 +313,11 @@ function createBoids() {
       WORLD_CENTER_X - SMALL_WIDTH  * FULLNESS/2 + Math.random() * SMALL_WIDTH  * FULLNESS,
       WORLD_CENTER_Y - SMALL_DEPTH  * FULLNESS/2 + Math.random() * SMALL_DEPTH  * FULLNESS,
       WORLD_CENTER_Z - SMALL_HEIGHT * FULLNESS/2 + Math.random() * SMALL_HEIGHT * FULLNESS
-
-      // WORLD_COORDINATES.x_min + Math.random() * WORLD_WIDTH,
-      // WORLD_COORDINATES.y_min + Math.random() * WORLD_DEPTH,
-      // WORLD_COORDINATES.z_min + Math.random() * WORLD_HEIGHT,
     ];
     let this_velocity = [
-      -BOID_START_SPEED + Math.random() * 2 * BOID_START_SPEED,
-      -BOID_START_SPEED + Math.random() * 2 * BOID_START_SPEED,
-      -BOID_START_SPEED + Math.random() * 2 * BOID_START_SPEED,
+      -BOID_MAX_SPEED * 0.9 + (Math.random() * 2 * BOID_MAX_SPEED),
+      -BOID_MAX_SPEED * 0.9 + (Math.random() * 2 * BOID_MAX_SPEED),
+      -BOID_MAX_SPEED * 0.9 + (Math.random() * 2 * BOID_MAX_SPEED),
     ];
 
     let thisBoid = new Boid(i, this_position, this_velocity);
@@ -496,9 +361,6 @@ function setWorldCoordinates() {
 
 function drawObjects() {
   let transform;
-  let rotate_transform;
-  let theta, phi;
-  let normalized_velocity;
 
   /* ----- draw world boundaries ----- */
   transform = mult(
@@ -516,16 +378,18 @@ function drawObjects() {
   drawWireframeCube(transform);
 
   /* ----- draw boids ----- */
-  // TODO: move scale_transform to GPU for faster computation
   const scale_transform = scale(
     BOID_SIZE, 
     BOID_SIZE, 
     BOID_SIZE
   );
 
+  let rotate_transform;
+  let theta, phi;
+  let normalized_velocity;
+
   for (let boid of boids) {
     // here I tried to get them pointing in the right direction, didn't work.
-    // Going to try again later.
     /*
     // we use slice to make a deep copy of the array
     normalized_velocity = normalize(boid.velocity.slice());
@@ -638,50 +502,19 @@ function setVertices() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferTetrahedron);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, INDICES_TETRAHEDRON, gl.STATIC_DRAW);
 
-  /*
-  let vertexColorArray = [];
-  for (let i = 0; i < 24; i++) {
-    vertexColorArray.push(colors["Peach Puff"]);
-  }
-
-  for (let i = 0; i < NUM_BOIDS; i++) {
-    let color = [Math.random(), Math.random(), Math.random(), 1.0];
-
-    for (let j = 0; j < 4; j++) {
-      // each boid has 4 vertices
-      vertexColorArray.push(color);
-    }
-  }
-
-  vertexColors = flatten(vertexColorArray);
-
-  send color data to GPU
-  gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, vertexColors, gl.DYNAMIC_DRAW);
-
-  vColor = gl.getAttribLocation(program, "vColor");
-  gl.enableVertexAttribArray(vColor);
-
-   */
-
 }
 
-function drawWireframeCube(transform, color) {
+function drawWireframeCube(transform) {
   // bind cube buffer
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBufferWireframeCube);
 
   // copy transform matrix to GPU
   gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
-  // set offset to select color
-  // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-
   // copy color
   gl.uniform4fv(uColor, colors["Peach Puff"]);
 
   // draw cube
-  console.log(colors["Peach Puff"].length)
-
   gl.drawElements(gl.LINES, 24, gl.UNSIGNED_BYTE, 0);
 }
 
@@ -692,13 +525,8 @@ function drawBoid(transform, boid) {
   // copy transform matrix to GPU
   gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
-  // set offset to select color. Must multiply by 4 to get offset in bytes
-  // let offset = boidColorIndex(boid) * 4;
-  // gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-  // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, offset);
-  // gl.enableVertexAttribArray(vColor);
-
-  gl.uniform4fv(uColor, boid.color);
+  // copy color
+  gl.uniform4fv(uColor, boid.modelColor);
 
   // draw tetrahedron
   gl.drawElements(gl.TRIANGLES, 12, gl.UNSIGNED_BYTE, 0);

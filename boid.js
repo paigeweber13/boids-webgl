@@ -9,20 +9,24 @@ class Boid {
     this.id = id;
     this.position = position;
     this.velocity = velocity;
+    this.initialVelocity = length(this.velocity);
 
     this.mostRecentCellId = undefined;
-    this.color = new Float32Array([Math.random(), Math.random(), Math.random(), 1.0]);
+    this.modelColor = [
+      Math.random(),
+      Math.random(),
+      Math.random(),
+      1.0];
   }
 
   doTimeStep(){
     // keeps the boids moving. Not strictly necessary (`separation()` adds
     // enough entropy to the system that it can keep moving) but it keeps
     // things at a good pace
+
     let speed = length(this.velocity);
-    if(speed < BOID_MIN_SPEED) {
+    if(speed < this.initialVelocity) {
       this.velocity = scalarMultiply(this.velocity, 1.1);
-    } else if (speed > BOID_MAX_SPEED) {
-      this.velocity = scalarMultiply(this.velocity, 0.9);
     }
 
     this.position[0] += this.velocity[0];
