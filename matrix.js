@@ -1,20 +1,21 @@
 /* basic linear algebra */
+
 // u, v must be 3-element arrays
 function distance(u, v) {
   return Math.pow(
-    Math.pow(v[0]-u[0], 2) + Math.pow(v[1]-u[1], 2) + Math.pow(v[2]-u[2], 2), 
+    Math.pow(v[0] - u[0], 2) + Math.pow(v[1] - u[1], 2) + Math.pow(v[2] - u[2], 2),
     0.5
   );
 }
 
 function increaseArray(arrayToEdit, otherArray) {
   // increases an array in-place for better memory efficiency
-  for(let i = 0; i < arrayToEdit.length; i++) {
+  for (let i = 0; i < arrayToEdit.length; i++) {
     arrayToEdit[i] += otherArray[i];
   }
 }
 
-function scalarMultiply(u, c){
+function scalarMultiply(u, c) {
   let result = [];
   for (let item of u) {
     result.push(item * c);
@@ -157,9 +158,9 @@ function worldToNormalized(wc) {
    *  the y dimension
    */
   let scale_world_to_ndc_size = scale(
-    2.0/(wc.x_max - wc.x_min),
-    2.0/(wc.y_max - wc.y_min),
-    2.0/(wc.z_max - wc.z_min));
+    2.0 / (wc.x_max - wc.x_min),
+    2.0 / (wc.y_max - wc.y_min),
+    2.0 / (wc.z_max - wc.z_min));
 
   /* translate the bottom left corner of the world coordinate system to -1, -1
    * in NDC

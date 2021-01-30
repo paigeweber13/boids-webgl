@@ -26,11 +26,11 @@ const THETA_STEP = Math.PI / 512;
 // coordinate system
 const WORLD_COORDINATES = {
   x_min: -500,
-  x_max:  500,
+  x_max: 500,
   y_min: -500,
-  y_max:  500,
+  y_max: 500,
   z_min: -500,
-  z_max:  500,
+  z_max: 500,
 }
 
 /* world boundaries */
@@ -38,9 +38,9 @@ const WORLD_WIDTH = WORLD_COORDINATES.x_max - WORLD_COORDINATES.x_min;
 const WORLD_DEPTH = WORLD_COORDINATES.y_max - WORLD_COORDINATES.y_min;
 const WORLD_HEIGHT = WORLD_COORDINATES.z_max - WORLD_COORDINATES.z_min;
 
-const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH/2;
-const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH/2;
-const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT/2;
+const WORLD_CENTER_X = WORLD_COORDINATES.x_min + WORLD_WIDTH / 2;
+const WORLD_CENTER_Y = WORLD_COORDINATES.y_min + WORLD_DEPTH / 2;
+const WORLD_CENTER_Z = WORLD_COORDINATES.z_min + WORLD_HEIGHT / 2;
 
 const WIDTH_IN_CELLS = 20;
 
@@ -52,7 +52,7 @@ let boids = [];
 let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
 const NUM_BOIDS = 300;
 
-const BOID_SIZE = WORLD_SIZE/128;
+const BOID_SIZE = WORLD_SIZE / 128;
 
 // increasing boid_max_speed also increases the average speed
 let boid_max_speed = 2;
@@ -146,12 +146,14 @@ function render() {
 
   drawObjects();
 
-  if(!isPaused){
+  if (!isPaused) {
     // requestAnimFrame(render);
 
     const DELAY = 15;
     setTimeout(
-      function () { requestAnimFrame(render); }, DELAY
+      function () {
+        requestAnimFrame(render);
+      }, DELAY
     );
   }
 }
@@ -159,7 +161,7 @@ function render() {
 /* ------------ boid things ------------- */
 function updateBoids() {
 
-  for (let boid of boids){
+  for (let boid of boids) {
     boid.doTimeStep();
 
     // update own cell
@@ -202,9 +204,9 @@ function updateBoids() {
       }
     }
 
-    if(numNeighbors > 0){
-      neighborAveragePosition = scalarMultiply(neighborAveragePosition, 1/numNeighbors);
-      neighborAverageVelocity = scalarMultiply(neighborAverageVelocity, 1/numNeighbors);
+    if (numNeighbors > 0) {
+      neighborAveragePosition = scalarMultiply(neighborAveragePosition, 1 / numNeighbors);
+      neighborAverageVelocity = scalarMultiply(neighborAverageVelocity, 1 / numNeighbors);
 
       cohesion(boid, neighborAveragePosition);
       alignment(boid, neighborAverageVelocity);
@@ -215,61 +217,61 @@ function updateBoids() {
 
 }
 
-function alignment(boid, neighborAverageVelocity){
+function alignment(boid, neighborAverageVelocity) {
   // ---------- alignment ---------- //
   // find "steering": diff between my velocity and average velocity
 
   let thisForce = scalarMultiply(
-    subtract(neighborAverageVelocity, boid.velocity), 
+    subtract(neighborAverageVelocity, boid.velocity),
     force_scale_alignment
   );
   boid.applyForce(thisForce);
 }
 
-function cohesion(boid, neighborAveragePosition){
+function cohesion(boid, neighborAveragePosition) {
   // ---------- cohesion ---------- //
   // add force to move towards average position 
   // (cohesion/alignment)
 
   let thisForce = scalarMultiply(
-    subtract(neighborAveragePosition, boid.position), 
+    subtract(neighborAveragePosition, boid.position),
     force_scale_cohesion
   );
   boid.applyForce(thisForce);
 }
 
-function separation(boid, otherBoid){
+function separation(boid, otherBoid) {
   // ---------- separation ---------- //
   // separation first: if distance less than minimum, force exactly 
   // away from otherBoid
 
   let thisForce = scalarMultiply(
-    subtract(boid.position, otherBoid.position), 
+    subtract(boid.position, otherBoid.position),
     force_scale_separation
   );
 
   boid.applyForce(thisForce);
 }
 
-function updateBoidColors(){
+function updateBoidColors() {
   for (let x of grid.cells) {
     for (let y of x) {
       for (let cell of y) {
-        if(cell.boidsInCell.length > 0){
+        if (cell.boidsInCell.length > 0) {
           let averageColor = [0.0, 0.0, 0.0, 0.0];
 
-          for(let boid of cell.boidsInCell) {
-            for(let i = 0; i < 4; i++){
+          for (let boid of cell.boidsInCell) {
+            for (let i = 0; i < 4; i++) {
               averageColor[i] += boid.modelColor[i];
             }
           }
 
-          for(let i = 0; i < 4; i++){
+          for (let i = 0; i < 4; i++) {
             averageColor[i] /= cell.boidsInCell.length;
           }
 
-          for(let boid of cell.boidsInCell) {
-            for(let i = 0; i < 4; i++){
+          for (let boid of cell.boidsInCell) {
+            for (let i = 0; i < 4; i++) {
               boid.modelColor[i] = averageColor[i];
             }
           }
@@ -279,29 +281,26 @@ function updateBoidColors(){
   }
 }
 
-function doWorldBoundaries(boid){
+function doWorldBoundaries(boid) {
   // reflect boid if it gets too close so that it doesn't go out of bounds
 
   // absolute values are used so that boids outside the world don't just
   // jitter back and forth
-  if(boid.position[0] > WORLD_COORDINATES.x_max) {
+  if (boid.position[0] > WORLD_COORDINATES.x_max) {
     boid.velocity[0] = -Math.abs(boid.velocity[0]);
-  }
-  else if(boid.position[0] < WORLD_COORDINATES.x_min) {
+  } else if (boid.position[0] < WORLD_COORDINATES.x_min) {
     boid.velocity[0] = Math.abs(boid.velocity[0]);
   }
 
-  if(boid.position[1] > WORLD_COORDINATES.y_max) {
+  if (boid.position[1] > WORLD_COORDINATES.y_max) {
     boid.velocity[1] = -Math.abs(boid.velocity[1]);
-  }
-  else if(boid.position[1] < WORLD_COORDINATES.y_min) {
+  } else if (boid.position[1] < WORLD_COORDINATES.y_min) {
     boid.velocity[1] = Math.abs(boid.velocity[1]);
   }
 
-  if(boid.position[2] > WORLD_COORDINATES.z_max) {
+  if (boid.position[2] > WORLD_COORDINATES.z_max) {
     boid.velocity[2] = -Math.abs(boid.velocity[2]);
-  }
-  else if(boid.position[2] < WORLD_COORDINATES.z_min) {
+  } else if (boid.position[2] < WORLD_COORDINATES.z_min) {
     boid.velocity[2] = Math.abs(boid.velocity[2]);
   }
 }
@@ -312,11 +311,11 @@ function createBoids() {
 
   const FULLNESS = 1.0;
 
-  for (let i = 0; i < NUM_BOIDS; i++){
+  for (let i = 0; i < NUM_BOIDS; i++) {
     let this_position = [
-      WORLD_CENTER_X - WORLD_WIDTH  * FULLNESS/2 + Math.random() * WORLD_WIDTH  * FULLNESS,
-      WORLD_CENTER_Y - WORLD_DEPTH  * FULLNESS/2 + Math.random() * WORLD_DEPTH  * FULLNESS,
-      WORLD_CENTER_Z - WORLD_HEIGHT * FULLNESS/2 + Math.random() * WORLD_HEIGHT * FULLNESS
+      WORLD_CENTER_X - WORLD_WIDTH * FULLNESS / 2 + Math.random() * WORLD_WIDTH * FULLNESS,
+      WORLD_CENTER_Y - WORLD_DEPTH * FULLNESS / 2 + Math.random() * WORLD_DEPTH * FULLNESS,
+      WORLD_CENTER_Z - WORLD_HEIGHT * FULLNESS / 2 + Math.random() * WORLD_HEIGHT * FULLNESS
     ];
     let this_velocity = [
       -boid_max_speed + (Math.random() * 2 * boid_max_speed),
@@ -338,7 +337,7 @@ function createBoids() {
 
 // actually sets camera and projection
 function setCamera() {
-  let fov = Math.PI/2000;
+  let fov = Math.PI / 2000;
   let projection = perspectiveProjectionFov(fov, fov, 1, 1000)
   gl.uniformMatrix4fv(M_projection, false, flatten(projection));
 
@@ -378,17 +377,17 @@ function drawObjects() {
 
     // cube width is 2, so we want to scale by (world_size/2)
     scale(
-      (WORLD_WIDTH  * WORLD_BOUNDARY_MARGIN)/2,
-      (WORLD_DEPTH  * WORLD_BOUNDARY_MARGIN)/2,
-      (WORLD_HEIGHT * WORLD_BOUNDARY_MARGIN)/2
+      (WORLD_WIDTH * WORLD_BOUNDARY_MARGIN) / 2,
+      (WORLD_DEPTH * WORLD_BOUNDARY_MARGIN) / 2,
+      (WORLD_HEIGHT * WORLD_BOUNDARY_MARGIN) / 2
     )
   );
   drawWireframeCube(transform);
 
   /* ----- draw boids ----- */
   const scale_transform = scale(
-    BOID_SIZE, 
-    BOID_SIZE, 
+    BOID_SIZE,
+    BOID_SIZE,
     BOID_SIZE
   );
 
@@ -410,14 +409,14 @@ function drawObjects() {
 
     transform = mult(rotate_transform, scale_transform)
     */
-    transform = mult(translate(boid.position[0], boid.position[1], boid.position[2]), 
+    transform = mult(translate(boid.position[0], boid.position[1], boid.position[2]),
       scale_transform);
     drawBoid(transform, boid);
   }
 }
 
 function doWorldRotation() {
-  if(isWorldRotating){
+  if (isWorldRotating) {
     theta += THETA_STEP;
     if (theta >= 2 * Math.PI) {
       theta = 0;
@@ -451,10 +450,10 @@ function setVertices() {
     1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0,  // v4-v7-v6-v5 back
 
     // tetrahedron vertices
-    -t_b_w/2, -t_h/2, -t_b_h/2, // base: bottom left point
-    t_b_w/2, -t_h/2, -t_b_h/2, // base: bottom right point
-    0, -t_h/2, t_b_h/2, // base: top point
-    0, t_h/2, 0, // pointy "nose" of the tetrahedron
+    -t_b_w / 2, -t_h / 2, -t_b_h / 2, // base: bottom left point
+    t_b_w / 2, -t_h / 2, -t_b_h / 2, // base: bottom right point
+    0, -t_h / 2, t_b_h / 2, // base: top point
+    0, t_h / 2, 0, // pointy "nose" of the tetrahedron
   ]);
 
   const INDICES_CUBE = new Uint8Array([
@@ -468,14 +467,14 @@ function setVertices() {
 
   const INDICES_WIREFRAME_CUBE = new Uint8Array([
     // front face
-    0, 1, 
-    1, 2, 
-    2, 3, 
+    0, 1,
+    1, 2,
+    2, 3,
     3, 0,
 
     // back face
-    20, 21, 
-    21, 22, 
+    20, 21,
+    21, 22,
     22, 23,
     23, 20,
 
@@ -548,15 +547,14 @@ function drawBoid(transform, boid) {
 function hexToRgb(hex) {
   // inspired by this stackoverflow answer: https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb#5624139
   let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i.exec(hex);
-  if(result[4] !== undefined) {
+  if (result[4] !== undefined) {
     return [
       parseInt(result[1], 16) / 255.0,
       parseInt(result[2], 16) / 255.0,
       parseInt(result[3], 16) / 255.0,
       parseInt(result[3], 16) / 255.0,
     ];
-  }
-  else {
+  } else {
     return result ? [
       parseInt(result[1], 16) / 255.0,
       parseInt(result[2], 16) / 255.0,
@@ -651,7 +649,7 @@ function setListeners() {
   document.getElementById("play-pause").onclick = () => {
     isPaused = !isPaused;
 
-    if(!isPaused){
+    if (!isPaused) {
       render();
     }
   };
@@ -725,7 +723,7 @@ function resetSimulation() {
   createBoids();
 
   // render one frame if we're paused
-  if(isPaused){
+  if (isPaused) {
     render();
   }
 }

@@ -57,7 +57,7 @@
  * visible.
  */
 
-WebGLUtils = function() {
+WebGLUtils = function () {
 
   /**
    * Creates the HTLM for a failure message
@@ -65,7 +65,7 @@ WebGLUtils = function() {
    *        canvas.
    * @return {string} The html.
    */
-  var makeFailHTML = function(msg) {
+  var makeFailHTML = function (msg) {
     return '' +
       '<table style="background-color: #8CE; width: 100%; height: 100%;"><tr>' +
       '<td align="center">' +
@@ -101,7 +101,7 @@ WebGLUtils = function() {
    *     creation attributes you want to pass in.
    * @return {WebGLRenderingContext} The created context.
    */
-  var setupWebGL = function(canvas, opt_attribs) {
+  var setupWebGL = function (canvas, opt_attribs) {
     function showLink(str) {
       var container = canvas.parentNode;
       if (container) {
@@ -127,14 +127,14 @@ WebGLUtils = function() {
    *     from. If one is not passed in one will be created.
    * @return {!WebGLContext} The created context.
    */
-  var create3DContext = function(canvas, opt_attribs) {
+  var create3DContext = function (canvas, opt_attribs) {
     var names = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
     var context = null;
     for (var ii = 0; ii < names.length; ++ii) {
       try {
         context = canvas.getContext(names[ii], opt_attribs);
+      } catch (e) {
       }
-      catch (e) {}
       if (context) {
         break;
       }
@@ -152,15 +152,15 @@ WebGLUtils = function() {
 /**
  * Provides requestAnimationFrame in a cross browser way.
  */
-window.requestAnimFrame = (function() {
+window.requestAnimFrame = (function () {
   return window.requestAnimationFrame ||
     window.webkitRequestAnimationFrame ||
     window.mozRequestAnimationFrame ||
     window.oRequestAnimationFrame ||
     window.msRequestAnimationFrame ||
-    function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-    window.setTimeout(callback, 1000 / 60);
-  };
+    function (/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+      window.setTimeout(callback, 1000 / 60);
+    };
 })();
 
 

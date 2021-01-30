@@ -5,7 +5,7 @@ class Boid {
    * 
    * [x_component: Number, y_component: Number, z_component: Number]
    */
-  constructor(id, position, velocity){
+  constructor(id, position, velocity) {
     this.id = id;
     this.position = position;
     this.velocity = velocity;
@@ -23,13 +23,13 @@ class Boid {
      */
   }
 
-  doTimeStep(){
+  doTimeStep() {
     // keeps the boids moving. Not strictly necessary (`separation()` adds
     // enough entropy to the system that it can keep moving) but it keeps
     // things at a good pace
 
     let speed = length(this.velocity);
-    if(speed < this.initialVelocity) {
+    if (speed < this.initialVelocity) {
       this.velocity = scalarMultiply(this.velocity, 1.2);
     }
 
@@ -38,7 +38,7 @@ class Boid {
     this.position[2] += this.velocity[2];
   }
 
-  applyForce(forceVector){
+  applyForce(forceVector) {
     this.velocity = add(this.velocity, forceVector);
   }
 }

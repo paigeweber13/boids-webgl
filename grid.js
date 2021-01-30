@@ -1,25 +1,25 @@
 class Grid {
-  constructor(cellsPerDimension, worldCoordinates) {      
+  constructor(cellsPerDimension, worldCoordinates) {
     this.worldCoordinates = worldCoordinates;
 
     this.worldWidth = worldCoordinates.x_max - worldCoordinates.x_min;
     this.worldDepth = worldCoordinates.y_max - worldCoordinates.y_min;
     this.worldHeight = worldCoordinates.z_max - worldCoordinates.z_min;
 
-    this.cellWidth = this.worldWidth/cellsPerDimension;
-    this.cellDepth = this.worldDepth/cellsPerDimension;
-    this.cellHeight = this.worldHeight/cellsPerDimension;
+    this.cellWidth = this.worldWidth / cellsPerDimension;
+    this.cellDepth = this.worldDepth / cellsPerDimension;
+    this.cellHeight = this.worldHeight / cellsPerDimension;
     console.log("cell dimensions: ", [this.cellWidth, this.cellDepth, this.cellHeight]);
 
     this.cellsPerDimension = cellsPerDimension;
     this.cells = [];
     this.cellsById = {};
 
-    for(let i = 0; i < cellsPerDimension; i++){
+    for (let i = 0; i < cellsPerDimension; i++) {
       this.cells.push([]); // x dimension
-      for(let j = 0; j < cellsPerDimension; j++){
+      for (let j = 0; j < cellsPerDimension; j++) {
         this.cells[i].push([]); // y dimension
-        for(let k = 0; k < cellsPerDimension; k++){
+        for (let k = 0; k < cellsPerDimension; k++) {
           let newCell = new Cell(i * cellsPerDimension * cellsPerDimension + j * cellsPerDimension + k);
 
           this.cells[i][j].push(newCell); // z dimension
@@ -38,9 +38,8 @@ class Grid {
     let z = Math.floor((boid.position[2] - this.worldCoordinates.z_min) / this.cellHeight);
 
     if (x < 0 || x >= this.cellsPerDimension ||
-        y < 0 || y >= this.cellsPerDimension ||
-        z < 0 || z >= this.cellsPerDimension)
-    {
+      y < 0 || y >= this.cellsPerDimension ||
+      z < 0 || z >= this.cellsPerDimension) {
       return undefined;
     }
 
@@ -63,16 +62,16 @@ class Grid {
     // It's not a perfect model but it's pretty good and much easier to code.
     const POSITION_DELTAS = [
       [-sightDistance, -sightDistance, -sightDistance],
-      [-sightDistance, -sightDistance,  sightDistance],
+      [-sightDistance, -sightDistance, sightDistance],
 
-      [-sightDistance,  sightDistance, -sightDistance],
-      [-sightDistance,  sightDistance,  sightDistance],
+      [-sightDistance, sightDistance, -sightDistance],
+      [-sightDistance, sightDistance, sightDistance],
 
-      [ sightDistance, -sightDistance, -sightDistance],
-      [ sightDistance, -sightDistance,  sightDistance],
+      [sightDistance, -sightDistance, -sightDistance],
+      [sightDistance, -sightDistance, sightDistance],
 
-      [ sightDistance,  sightDistance, -sightDistance],
-      [ sightDistance,  sightDistance,  sightDistance],
+      [sightDistance, sightDistance, -sightDistance],
+      [sightDistance, sightDistance, sightDistance],
     ];
 
     let minIndices = [this.cellsPerDimension, this.cellsPerDimension, this.cellsPerDimension];
@@ -85,14 +84,13 @@ class Grid {
         boid.position[2] + delta[2],
       ]);
 
-      if(thisCellIndex !== undefined) {
+      if (thisCellIndex !== undefined) {
         // get maximum and minimum: we will fill in the middle
 
-        for(let i = 0; i < 3; i++) {
+        for (let i = 0; i < 3; i++) {
           if (thisCellIndex[i] < minIndices[i]) {
             minIndices[i] = thisCellIndex[i];
-          }
-          else if (thisCellIndex[i] > maxIndices[i]) {
+          } else if (thisCellIndex[i] > maxIndices[i]) {
             maxIndices[i] = thisCellIndex[i];
           }
         }
@@ -100,10 +98,10 @@ class Grid {
     }
 
     // fix anything that's out of bounds
-    for(let i = 0; i < 3; i++) {
-      if(minIndices[i] < 0) minIndices[i] = 0;
+    for (let i = 0; i < 3; i++) {
+      if (minIndices[i] < 0) minIndices[i] = 0;
 
-      if(maxIndices[i] > this.cellsPerDimension - 1) {
+      if (maxIndices[i] > this.cellsPerDimension - 1) {
         maxIndices[i] = this.cellsPerDimension - 1;
       }
     }
