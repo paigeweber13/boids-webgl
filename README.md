@@ -5,9 +5,9 @@ An implementation of Craig Reynolds's "Boids" program
 - [x] fix camera: center on world
 - [x] add grid system into simulation
 - [x] fix speed problems with grid system
+- [x] remove color averaging  
 - [ ] add second, close-up camera
 - [x] average color of boids in nearby cells
-  - [ ] is there a better way to color flocks? Give each cell it's own color?
 - [ ] check TODOs
 - [ ] point boids in the right direction
 
