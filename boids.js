@@ -55,7 +55,6 @@ const NUM_BOIDS = 300;
 const BOID_SIGHT_DISTANCE = WORLD_SIZE/15;
 const MINIMUM_DISTANCE = BOID_SIGHT_DISTANCE/4;
 const BOID_SIZE = WORLD_SIZE/128;
-const REFLECT_THRESHOLD = WORLD_SIZE * 0.10;
 
 // increasing boid_max_speed also increases the average speed
 let boid_max_speed = 2;
@@ -185,6 +184,7 @@ function updateBoids() {
 
     for (let cell of grid.visibleCells(boid, BOID_SIGHT_DISTANCE)) {
       for (let otherBoid of cell.boidsInCell) {
+        // if we aren't looking at self
         if (boid.id !== otherBoid.id) {
           let thisDistance = distance(boid.position, otherBoid.position);
 
@@ -281,24 +281,27 @@ function updateBoidColors(){
 
 function doWorldBoundaries(boid){
   // reflect boid if it gets too close so that it doesn't go out of bounds
-  if(boid.position[0] + REFLECT_THRESHOLD > WORLD_COORDINATES.x_max) {
+
+  // absolute values are used so that boids outside the world don't just
+  // jitter back and forth
+  if(boid.position[0] > WORLD_COORDINATES.x_max) {
     boid.velocity[0] = -Math.abs(boid.velocity[0]);
   }
-  else if(boid.position[0] - REFLECT_THRESHOLD < WORLD_COORDINATES.x_min) {
+  else if(boid.position[0] < WORLD_COORDINATES.x_min) {
     boid.velocity[0] = Math.abs(boid.velocity[0]);
   }
 
-  if(boid.position[1] + REFLECT_THRESHOLD > WORLD_COORDINATES.y_max) {
+  if(boid.position[1] > WORLD_COORDINATES.y_max) {
     boid.velocity[1] = -Math.abs(boid.velocity[1]);
   }
-  else if(boid.position[1] - REFLECT_THRESHOLD < WORLD_COORDINATES.y_min) {
+  else if(boid.position[1] < WORLD_COORDINATES.y_min) {
     boid.velocity[1] = Math.abs(boid.velocity[1]);
   }
 
-  if(boid.position[2] + REFLECT_THRESHOLD > WORLD_COORDINATES.z_max) {
+  if(boid.position[2] > WORLD_COORDINATES.z_max) {
     boid.velocity[2] = -Math.abs(boid.velocity[2]);
   }
-  else if(boid.position[2] - REFLECT_THRESHOLD < WORLD_COORDINATES.z_min) {
+  else if(boid.position[2] < WORLD_COORDINATES.z_min) {
     boid.velocity[2] = Math.abs(boid.velocity[2]);
   }
 }
@@ -309,18 +312,11 @@ function createBoids() {
 
   const FULLNESS = 1.0;
 
-  // because of numerical stability issues, we only create inside the
-  // reflect threshold. If we use the full world coordinate system, some
-  // positions will exceed world boundaries due to rounding errors.
-  let SMALL_WIDTH = WORLD_WIDTH - REFLECT_THRESHOLD;
-  let SMALL_DEPTH = WORLD_DEPTH - REFLECT_THRESHOLD;
-  let SMALL_HEIGHT = WORLD_HEIGHT - REFLECT_THRESHOLD;
-
   for (let i = 0; i < NUM_BOIDS; i++){
     let this_position = [
-      WORLD_CENTER_X - SMALL_WIDTH  * FULLNESS/2 + Math.random() * SMALL_WIDTH  * FULLNESS,
-      WORLD_CENTER_Y - SMALL_DEPTH  * FULLNESS/2 + Math.random() * SMALL_DEPTH  * FULLNESS,
-      WORLD_CENTER_Z - SMALL_HEIGHT * FULLNESS/2 + Math.random() * SMALL_HEIGHT * FULLNESS
+      WORLD_CENTER_X - WORLD_WIDTH  * FULLNESS/2 + Math.random() * WORLD_WIDTH  * FULLNESS,
+      WORLD_CENTER_Y - WORLD_DEPTH  * FULLNESS/2 + Math.random() * WORLD_DEPTH  * FULLNESS,
+      WORLD_CENTER_Z - WORLD_HEIGHT * FULLNESS/2 + Math.random() * WORLD_HEIGHT * FULLNESS
     ];
     let this_velocity = [
       -boid_max_speed + (Math.random() * 2 * boid_max_speed),
@@ -370,6 +366,10 @@ function setWorldCoordinates() {
 function drawObjects() {
   let transform;
 
+  // make cube just slightly bigger than world because boids will
+  // occasionally be just outside the world for a frame or two
+  const WORLD_BOUNDARY_MARGIN = 1.05;
+
   /* ----- draw world boundaries ----- */
   transform = mult(
     // move to center of world: cube vertices are such that center of cube
@@ -378,9 +378,9 @@ function drawObjects() {
 
     // cube width is 2, so we want to scale by (world_size/2)
     scale(
-      (WORLD_WIDTH-REFLECT_THRESHOLD)/2,
-      (WORLD_DEPTH-REFLECT_THRESHOLD)/2,
-      (WORLD_HEIGHT-REFLECT_THRESHOLD)/2
+      (WORLD_WIDTH  * WORLD_BOUNDARY_MARGIN)/2,
+      (WORLD_DEPTH  * WORLD_BOUNDARY_MARGIN)/2,
+      (WORLD_HEIGHT * WORLD_BOUNDARY_MARGIN)/2
     )
   );
   drawWireframeCube(transform);

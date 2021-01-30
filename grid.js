@@ -33,12 +33,19 @@ class Grid {
   // given boid is currently in
   addressBoid(boid) {
     // cells will be counted from x_min, y_min, z_min. Order is x, y, z
+    let x = Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth);
+    let y = Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth);
+    let z = Math.floor((boid.position[2] - this.worldCoordinates.z_min) / this.cellHeight);
+
+    if (x < 0 || x >= this.cellsPerDimension ||
+        y < 0 || y >= this.cellsPerDimension ||
+        z < 0 || z >= this.cellsPerDimension)
+    {
+      return undefined;
+    }
 
     // assumes boid is in-bounds
-    return this.cells
-      [Math.floor((boid.position[0] - this.worldCoordinates.x_min) / this.cellWidth)]
-      [Math.floor((boid.position[1] - this.worldCoordinates.y_min) / this.cellDepth)]
-      [Math.floor((boid.position[2] - this.worldCoordinates.z_min) / this.cellHeight)];
+    return this.cells[x][y][z];
   }
 
   getCellIndex(boidPosition) {
