@@ -30,7 +30,7 @@ class Boid {
 
     let speed = length(this.velocity);
     if(speed < this.initialVelocity) {
-      this.velocity = scalarMultiply(this.velocity, 1.1);
+      this.velocity = scalarMultiply(this.velocity, 1.2);
     }
 
     this.position[0] += this.velocity[0];

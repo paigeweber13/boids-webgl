@@ -52,8 +52,6 @@ let boids = [];
 let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
 const NUM_BOIDS = 300;
 
-const BOID_SIGHT_DISTANCE = WORLD_SIZE/15;
-const MINIMUM_DISTANCE = BOID_SIGHT_DISTANCE/4;
 const BOID_SIZE = WORLD_SIZE/128;
 
 // increasing boid_max_speed also increases the average speed
@@ -62,6 +60,8 @@ let boid_max_speed = 2;
 let force_scale_alignment = 0.1;
 let force_scale_cohesion = 0.01;
 let force_scale_separation = 0.01;
+let boid_sight_distance = 60;
+let minimum_distance = 15;
 
 /* other simulation stuff */
 let isWorldRotating = false;
@@ -179,18 +179,18 @@ function updateBoids() {
     let neighborAveragePosition = [0, 0, 0];
 
     // this function also checks if boid can see the neighbor
-    // let neighbors = grid.neighbors(boid, BOID_SIGHT_DISTANCE);
+    // let neighbors = grid.neighbors(boid, boid_sight_distance);
     let numNeighbors = 0;
 
-    for (let cell of grid.visibleCells(boid, BOID_SIGHT_DISTANCE)) {
+    for (let cell of grid.visibleCells(boid, boid_sight_distance)) {
       for (let otherBoid of cell.boidsInCell) {
         // if we aren't looking at self
         if (boid.id !== otherBoid.id) {
           let thisDistance = distance(boid.position, otherBoid.position);
 
-          if (thisDistance < BOID_SIGHT_DISTANCE) {
+          if (thisDistance < boid_sight_distance) {
             numNeighbors++;
-            if (thisDistance < MINIMUM_DISTANCE) {
+            if (thisDistance < minimum_distance) {
               separation(boid, otherBoid);
             }
 
@@ -628,6 +628,16 @@ function setSlidersToVariables() {
     force_scale_cohesion;
   document.getElementById("slider-cohesion-display").innerHTML =
     force_scale_cohesion;
+
+  document.getElementById("slider-boid-sight-distance").value =
+    boid_sight_distance;
+  document.getElementById("slider-boid-sight-distance-display").innerHTML =
+    boid_sight_distance;
+
+  document.getElementById("slider-boid-min-separation-distance").value =
+    minimum_distance;
+  document.getElementById("slider-boid-min-separation-distance-display").innerHTML =
+    minimum_distance;
 }
 
 function setListeners() {
@@ -671,9 +681,28 @@ function setListeners() {
     document.getElementById("slider-cohesion-display").innerHTML =
       val;
   };
+  document.getElementById("slider-boid-sight-distance").oninput = () => {
+    let val = document.getElementById("slider-boid-sight-distance").value;
+    boid_sight_distance = val;
+    document.getElementById("slider-boid-sight-distance-display").innerHTML =
+      val;
+  };
+  document.getElementById("slider-boid-min-separation-distance").oninput = () => {
+    let val = document.getElementById("slider-boid-min-separation-distance").value;
+    minimum_distance = val;
+    document.getElementById("slider-boid-min-separation-distance-display").innerHTML =
+      val;
+  };
 
   // presets
   document.getElementById("behavior-fast").onclick = () => {
+    boid_max_speed = 10;
+    force_scale_alignment = 0.15;
+    force_scale_cohesion = 0.05;
+    force_scale_separation = 0.05;
+    boid_sight_distance = 100;
+    minimum_distance = 30;
+
     setSlidersToVariables();
     resetSimulation();
   };
@@ -683,6 +712,9 @@ function setListeners() {
     force_scale_alignment = 0.1;
     force_scale_cohesion = 0.01;
     force_scale_separation = 0.01;
+    boid_sight_distance = 60;
+    minimum_distance = 15;
+
     setSlidersToVariables();
     resetSimulation();
   };
