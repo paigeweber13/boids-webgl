@@ -11,17 +11,61 @@ lang="en">
   <h1>Boids</h1>
 
   <div class="row">
-    <div class="col-md-11">
-      <canvas height="1024" id="gl-canvas" width="1024">
+    <div class="col-md-9">
+      <canvas height="800" id="gl-canvas" width="800">
         Oops ... your browser doesn't support the HTML5 canvas element
       </canvas>
     </div>
-    <div class="col-md-1">
+    <div class="col-md-3">
+      <h2>Simulation Controls</h2>
       <button class="btn btn-secondary" id="play-pause">Play/Pause Simulation</button>
       <br><br>
       <button class="btn btn-secondary" id="reset">Reset Simulation</button>
       <br><br>
       <button class="btn btn-secondary" id="toggle-rotation">Toggle World Rotation</button>
+
+
+      <h2>Boid Behavior</h2>
+      <h3>Presets</h3>
+      <button class="btn btn-secondary" id="behavior-fast">Fast</button>
+      <button class="btn btn-secondary" id="behavior-slow">Slow</button>
+
+
+      <h3>Manual Tuning</h3>
+      <label class="form-label" for="slider-boid-speed-group">Boid Speed</label>
+      <div id="slider-boid-speed-group">
+        <p><em>Note: boid speed only takes affect after resetting the
+          simulation</em></p>
+        <span id="slider-boid-speed-display"></span>
+        <input type="range" class="form-range" id="slider-boid-speed"
+               min="1.00" max="50.0" step="0.01">
+      </div>
+      <br>
+
+      <label class="form-label" for="slider-separation-group">Separation</label>
+      <div id="slider-separation-group">
+        <span id="slider-separation-display"></span>
+        <input type="range" class="form-range" id="slider-separation"
+               min="0.01" max="1.0" step="0.01">
+      </div>
+      <br>
+
+      <label class="form-label" for="slider-alignment-group">Alignment</label>
+      <div id="slider-alignment-group">
+        <span id="slider-alignment-display"></span>
+        <input type="range" class="form-range" id="slider-alignment"
+               min="0.01" max="1.0" step="0.01">
+      </div>
+      <br>
+
+      <label class="form-label" for="slider-cohesion-group">Cohesion</label>
+      <div id="slider-cohesion-group">
+        <span id="slider-cohesion-display"></span>
+        <input type="range" class="form-range" id="slider-cohesion"
+               min="0.01" max="1.0" step="0.01">
+      </div>
+      <br>
+
     </div>
   </div>
 </div>

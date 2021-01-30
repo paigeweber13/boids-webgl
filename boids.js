@@ -50,13 +50,19 @@ const WORLD_SIZE = (WORLD_WIDTH + WORLD_DEPTH + WORLD_HEIGHT) / 3;
 /* boid things */
 let boids = [];
 let grid = new Grid(WIDTH_IN_CELLS, WORLD_COORDINATES);
-const NUM_BOIDS = 600;
+const NUM_BOIDS = 300;
 
 const BOID_SIGHT_DISTANCE = WORLD_SIZE/15;
 const MINIMUM_DISTANCE = BOID_SIGHT_DISTANCE/4;
 const BOID_SIZE = WORLD_SIZE/128;
-const BOID_MAX_SPEED = WORLD_SIZE/400;
 const REFLECT_THRESHOLD = WORLD_SIZE * 0.10;
+
+// increasing boid_max_speed also increases the average speed
+let boid_max_speed = 2;
+
+let force_scale_alignment = 0.1;
+let force_scale_cohesion = 0.01;
+let force_scale_separation = 0.01;
 
 /* other simulation stuff */
 let isWorldRotating = false;
@@ -119,6 +125,7 @@ window.onload = function init() {
   setVertices();
   setWorldCoordinates();
 
+  setSlidersToVariables();
   setListeners();
 
   createBoids();
@@ -133,7 +140,11 @@ function render() {
 
   doWorldRotation();
   updateBoids();
-  updateBoidColors();
+
+  // was originally used to average color of boids in local flock, but I
+  // don't like how it looks
+  // updateBoidColors();
+
   drawObjects();
 
   if(!isPaused){
@@ -155,7 +166,7 @@ function updateBoids() {
     // update own cell
     let myCell = grid.addressBoid(boid);
 
-    if (myCell.id !== boid.mostRecentCellId) {
+    if (myCell && myCell.id !== boid.mostRecentCellId) {
       // then remove from old cell and add to new
       let oldCell = grid.cellsById[boid.mostRecentCellId];
 
@@ -208,10 +219,9 @@ function alignment(boid, neighborAverageVelocity){
   // ---------- alignment ---------- //
   // find "steering": diff between my velocity and average velocity
 
-  const FORCE_SCALE_ALIGNMENT = 0.1;
   let thisForce = scalarMultiply(
     subtract(neighborAverageVelocity, boid.velocity), 
-    FORCE_SCALE_ALIGNMENT
+    force_scale_alignment
   );
   boid.applyForce(thisForce);
 }
@@ -221,10 +231,9 @@ function cohesion(boid, neighborAveragePosition){
   // add force to move towards average position 
   // (cohesion/alignment)
 
-  const FORCE_SCALE_COHESION = 0.01;
   let thisForce = scalarMultiply(
     subtract(neighborAveragePosition, boid.position), 
-    FORCE_SCALE_COHESION
+    force_scale_cohesion
   );
   boid.applyForce(thisForce);
 }
@@ -234,10 +243,9 @@ function separation(boid, otherBoid){
   // separation first: if distance less than minimum, force exactly 
   // away from otherBoid
 
-  const FORCE_SCALE_SEPARATION = 0.01;
   let thisForce = scalarMultiply(
     subtract(boid.position, otherBoid.position), 
-    FORCE_SCALE_SEPARATION
+    force_scale_separation
   );
 
   boid.applyForce(thisForce);
@@ -315,9 +323,9 @@ function createBoids() {
       WORLD_CENTER_Z - SMALL_HEIGHT * FULLNESS/2 + Math.random() * SMALL_HEIGHT * FULLNESS
     ];
     let this_velocity = [
-      -BOID_MAX_SPEED * 0.9 + (Math.random() * 2 * BOID_MAX_SPEED),
-      -BOID_MAX_SPEED * 0.9 + (Math.random() * 2 * BOID_MAX_SPEED),
-      -BOID_MAX_SPEED * 0.9 + (Math.random() * 2 * BOID_MAX_SPEED),
+      -boid_max_speed + (Math.random() * 2 * boid_max_speed),
+      -boid_max_speed + (Math.random() * 2 * boid_max_speed),
+      -boid_max_speed + (Math.random() * 2 * boid_max_speed),
     ];
 
     let thisBoid = new Boid(i, this_position, this_velocity);
@@ -388,6 +396,7 @@ function drawObjects() {
   let theta, phi;
   let normalized_velocity;
 
+  gl.uniform4fv(uColor, colors["Salmon Pink"]);
   for (let boid of boids) {
     // here I tried to get them pointing in the right direction, didn't work.
     /*
@@ -525,8 +534,8 @@ function drawBoid(transform, boid) {
   // copy transform matrix to GPU
   gl.uniformMatrix4fv(M_model_transform, false, flatten(transform));
 
-  // copy color
-  gl.uniform4fv(uColor, boid.modelColor);
+  // copy color. Removed, as color is now static
+  // gl.uniform4fv(uColor, boid.modelColor);
 
   // draw tetrahedron
   gl.drawElements(gl.TRIANGLES, 12, gl.UNSIGNED_BYTE, 0);
@@ -599,7 +608,30 @@ let colors = {
 // colors["Salmon Pink"][3] = 0.5
 
 /* UI */
+function setSlidersToVariables() {
+  document.getElementById("slider-boid-speed").value =
+    boid_max_speed;
+  document.getElementById("slider-boid-speed-display").innerHTML =
+    boid_max_speed;
+
+  document.getElementById("slider-separation").value =
+    force_scale_separation;
+  document.getElementById("slider-separation-display").innerHTML =
+    force_scale_separation;
+
+  document.getElementById("slider-alignment").value =
+    force_scale_alignment;
+  document.getElementById("slider-alignment-display").innerHTML =
+    force_scale_alignment;
+
+  document.getElementById("slider-cohesion").value =
+    force_scale_cohesion;
+  document.getElementById("slider-cohesion-display").innerHTML =
+    force_scale_cohesion;
+}
+
 function setListeners() {
+  // simulation controls
   document.getElementById("reset").onclick = resetSimulation;
 
   document.getElementById("toggle-rotation").onclick = () => {
@@ -612,6 +644,47 @@ function setListeners() {
     if(!isPaused){
       render();
     }
+  };
+
+  // sliders
+  document.getElementById("slider-boid-speed").oninput = () => {
+    let val = document.getElementById("slider-boid-speed").value;
+    boid_max_speed = val;
+    document.getElementById("slider-boid-speed-display").innerHTML =
+      val;
+  };
+  document.getElementById("slider-separation").oninput = () => {
+    let val = document.getElementById("slider-separation").value;
+    force_scale_separation = val;
+    document.getElementById("slider-separation-display").innerHTML =
+      val;
+  };
+  document.getElementById("slider-alignment").oninput = () => {
+    let val = document.getElementById("slider-alignment").value;
+    force_scale_alignment = val;
+    document.getElementById("slider-alignment-display").innerHTML =
+      val;
+  };
+  document.getElementById("slider-cohesion").oninput = () => {
+    let val = document.getElementById("slider-cohesion").value;
+    force_scale_cohesion = val;
+    document.getElementById("slider-cohesion-display").innerHTML =
+      val;
+  };
+
+  // presets
+  document.getElementById("behavior-fast").onclick = () => {
+    setSlidersToVariables();
+    resetSimulation();
+  };
+
+  document.getElementById("behavior-slow").onclick = () => {
+    boid_max_speed = 2;
+    force_scale_alignment = 0.1;
+    force_scale_cohesion = 0.01;
+    force_scale_separation = 0.01;
+    setSlidersToVariables();
+    resetSimulation();
   };
 }
 

@@ -12,11 +12,15 @@ class Boid {
     this.initialVelocity = length(this.velocity);
 
     this.mostRecentCellId = undefined;
+
+    // removed: color is now same for all boids
+    /*
     this.modelColor = [
       Math.random(),
       Math.random(),
       Math.random(),
       1.0];
+     */
   }
 
   doTimeStep(){
